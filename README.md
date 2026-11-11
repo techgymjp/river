@@ -45,4 +45,6 @@ python3 -m http.server 8000
 
 ## 公開
 
-`main` ブランチへの push で GitHub Actions（`.github/workflows/pages.yml`）が GitHub Pages にデプロイします。
+`main` ブランチのルートを GitHub Pages で公開しています（push すると自動で再デプロイ）。
+
+https://techgymjp.github.io/river/
