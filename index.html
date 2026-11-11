@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>渓流釣り</title>
+<meta name="description" content="3Dで楽しむ日本の渓流釣りゲーム。ヤマメ・イワナを目印釣りで狙おう。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&family=Noto+Serif+JP:wght@600;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+</head>
+<body>
+<canvas id="game"></canvas>
+
+<div id="hud">
+  <div id="topLeft" class="panel">
+    <div class="logo">渓流釣り</div>
+    <div class="stats"><span id="timeLabel">--:--</span>　釣果 <b id="catchCount">0</b> 尾　<b id="score">0</b> pt</div>
+  </div>
+  <div id="topRight">
+    <button id="btnLog" class="btn">釣果記録</button>
+    <button id="btnSound" class="btn">音 ON</button>
+    <button id="btnHelp" class="btn">操作</button>
+  </div>
+  <div id="message"></div>
+  <div id="biteAlert">アタリ！</div>
+  <div id="fightHud" class="panel">
+    <div class="row"><span>テンション</span><div class="bar tension"><div class="zone"></div><div id="tensionFill" class="fill"></div></div></div>
+    <div class="row"><span>魚の体力</span><div class="bar"><div id="staminaFill" class="fill stamina"></div></div></div>
+  </div>
+  <div id="mobileControls">
+    <button id="btnUp" class="btn round">◀ 上流</button>
+    <button id="btnStrike" class="btn round strike">合わせ<br><small>長押しで寄せ</small></button>
+    <button id="btnDown" class="btn round">下流 ▶</button>
+  </div>
+</div>
+
+<div id="loading" class="screen show">
+  <div class="logo big">渓流釣り</div>
+  <div id="loadingText">読み込み中…</div>
+</div>
+
+<div id="titleScreen" class="screen">
+  <div class="card">
+    <div class="logo big">渓流釣り</div>
+    <p class="sub">山あいの清流で、ヤマメ・イワナを目印釣りで狙う。</p>
+    <div class="opt">
+      <div class="label">時間帯</div>
+      <div class="chips" data-key="time">
+        <button data-val="morning" class="on">朝マズメ</button>
+        <button data-val="noon">日中</button>
+        <button data-val="evening">夕マズメ</button>
+      </div>
+    </div>
+    <div class="opt">
+      <div class="label">季節</div>
+      <div class="chips" data-key="season">
+        <button data-val="spring">新緑</button>
+        <button data-val="summer">盛夏</button>
+        <button data-val="autumn" class="on">紅葉</button>
+      </div>
+    </div>
+    <button id="btnStart" class="btn primary">釣りを始める</button>
+    <p class="tiny">マズメ時は魚の活性が高く、アタリが多くなります。</p>
+  </div>
+</div>
+
+<div id="resultModal" class="modal">
+  <div class="card result">
+    <div class="caught">釣り上げた！</div>
+    <canvas id="fishPreview"></canvas>
+    <div class="fishname" id="resName"></div>
+    <div id="resBadges"></div>
+    <div class="nums"><span id="resSize"></span><span id="resWeight"></span><span id="resPts"></span></div>
+    <p id="resDesc"></p>
+    <div class="buttons">
+      <button id="btnRelease" class="btn primary">リリース <small>+10%</small></button>
+      <button id="btnKeep" class="btn">キープ</button>
+    </div>
+  </div>
+</div>
+
+<div id="logModal" class="modal closable">
+  <div class="card">
+    <h2>釣果記録</h2>
+    <div id="logBody"></div>
+    <button class="btn" data-close>閉じる</button>
+  </div>
+</div>
+
+<div id="helpModal" class="modal closable">
+  <div class="card help">
+    <h2>遊び方</h2>
+    <ol>
+      <li><b>振り込み</b>：水面にカーソルを合わせ（緑の輪）クリック／タップ。</li>
+      <li><b>流し</b>：仕掛けは流れに乗って下ります。岩の裏や淵（深くて緑の濃い所）に魚が潜んでいます。</li>
+      <li><b>合わせ</b>：目印がピクッと動いたら（アタリ！）すかさず クリック／スペース。ヤマメのアタリは一瞬、イワナは少し長めです。</li>
+      <li><b>やり取り</b>：押し続けると竿を立てて寄せ、離すと魚の引きをいなします。テンションが赤（強すぎ）だと糸切れ、低すぎるとバラシ。</li>
+      <li><b>取り込み</b>：魚の体力を削って手前まで寄せると自動でタモ入れ。</li>
+    </ol>
+    <table>
+      <tr><td>A / ←</td><td>上流へ移動</td></tr>
+      <tr><td>D / →</td><td>下流へ移動</td></tr>
+      <tr><td>右ドラッグ / Q・E</td><td>視点の回転</td></tr>
+      <tr><td>ホイール / ピンチ</td><td>ズーム</td></tr>
+      <tr><td>スペース</td><td>合わせ / 長押しで寄せ</td></tr>
+    </table>
+    <p class="tiny">魚は人の気配や着水音に敏感です。歩いて近づきすぎると逃げてしまいます。上流には滝と滝壺があります。</p>
+    <button class="btn" data-close>閉じる</button>
+  </div>
+</div>
+
+<script type="module" src="js/main.js"></script>
+</body>
+</html>
