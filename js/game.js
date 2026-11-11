@@ -284,7 +284,7 @@ export class Game {
     this.tick2 = false;
     this.audio.tick();
     this.ui.bite(true);
-    if (navigator.vibrate) navigator.vibrate(60);
+    this.vibe(60);
   }
 
   updateBite(dt) {
@@ -310,11 +310,16 @@ export class Game {
   }
 
   // ---------------------------------------------------------- fight
+  // スマホの振動（対応ブラウザのみ。iOS Safari は非対応）
+  vibe(pattern) {
+    if (navigator.vibrate) { try { navigator.vibrate(pattern); } catch (e) { /* ignore */ } }
+  }
+
   startFight(fish) {
     const sp = SPECIES[fish.key];
     this.fight = {
       fish, sp, sizeF: fish.size / 25, stamina: 1, tension: 0.55,
-      runT: 0, runPow: 0.6, runDir: new THREE.Vector2(1, 0), high: 0, low: 0, jump: 0, splashT: 0, away: 0,
+      runT: 0, runPow: 0.6, runDir: new THREE.Vector2(1, 0), high: 0, low: 0, jump: 0, splashT: 0, away: 0, vibT: 0.4,
     };
     fish.state = 'hooked';
     this.ui.bite(false);
@@ -323,6 +328,7 @@ export class Game {
     this.audio.splash(0.6);
     this.effects.splash(fish.pos.clone().setY(W.waterLevel(fish.pos.z)), 14, 1);
     this.ui.fight(true);
+    this.vibe([90, 40, 140]); // 掛かった！
   }
 
   updateFight(dt) {
@@ -344,6 +350,8 @@ export class Game {
       const l = Math.hypot(rx, rz) || 1;
       F.runDir.set(rx / l, rz / l);
       if (F.stamina > 0.2 && Math.random() < F.sp.jumpy * F.stamina) F.jump = 0.6;
+      // 魚が走り出した瞬間：引きの強さに応じた長さで振動
+      if (F.stamina > 0 && F.runPow > 0.45) { this.vibe(Math.round(40 + Math.min(1.5, F.runPow) * 110)); F.vibT = 0.35; }
     }
     let vx, vz;
     if (F.stamina > 0) {
@@ -367,7 +375,7 @@ export class Game {
     const bed = W.terrainHeight(f.pos.x, f.pos.z);
     if (F.jump > 0) {
       const k = 1 - F.jump / 0.6;
-      if (k < 0.05 && !F.jumped) { F.jumped = true; this.effects.splash(new THREE.Vector3(f.pos.x, wl, f.pos.z), 18, 1.2); this.audio.splash(0.8); }
+      if (k < 0.05 && !F.jumped) { F.jumped = true; this.vibe([30, 30, 160]); F.vibT = 0.4; this.effects.splash(new THREE.Vector3(f.pos.x, wl, f.pos.z), 18, 1.2); this.audio.splash(0.8); }
       F.jump -= dt;
       f.pos.y = wl + Math.sin(k * Math.PI) * 0.45 * Math.min(1.4, F.sizeF);
       f.pitch = (0.5 - k) * 1.6;
@@ -404,6 +412,14 @@ export class Game {
     if (F.stamina < 0) F.stamina = 0;
     this.ui.setFight(F.tension, F.stamina);
 
+    // 引きの振動：テンションが高いほど長く。赤ゾーンは糸切れ警告の連続振動
+    F.vibT -= dt;
+    if (F.vibT <= 0) {
+      if (F.tension > 1.0) { this.vibe([50, 35, 50, 35, 50]); F.vibT = 0.32; }
+      else if (F.tension > 0.45) { this.vibe(Math.round(15 + (F.tension - 0.45) * 110)); F.vibT = 0.28; }
+      else F.vibT = 0.1;
+    }
+
     // rod
     this.rodYaw = dampAngle(this.rodYaw, Math.atan2(f.pos.x - this.pos.x, f.pos.z - this.pos.z), dt * 4);
     this.rodPitch = THREE.MathUtils.damp(this.rodPitch, this.pulling ? 1.25 : 0.85, 4, dt);
@@ -425,8 +441,8 @@ export class Game {
     this.ui.fight(false);
     this.retrieve();
     this.bendAmt = 0.05;
-    if (kind === 'break') { this.audio.snap(); this.ui.flash('糸が切れた！　引きが強い時は力を抜こう', 3); }
-    else { this.audio.fail(); this.ui.flash('バラした…　糸を張り気味に保とう', 3); }
+    if (kind === 'break') { this.audio.snap(); this.vibe(300); this.ui.flash('糸が切れた！　引きが強い時は力を抜こう', 3); }
+    else { this.audio.fail(); this.vibe([40, 90, 40]); this.ui.flash('バラした…　糸を張り気味に保とう', 3); }
   }
 
   startLanding() {
@@ -459,6 +475,7 @@ export class Game {
     const c = { key: f.key, size, pts, shaku, isRecord, weight, clock: this.clockLabel() };
     this.setState('result');
     this.audio.fanfare();
+    this.vibe([40, 60, 40, 60, 160]);
     this.fishMgr.caught(f);
     this.ui.showResult(c, (keep) => {
       const bonus = keep ? 0 : Math.round(pts * 0.1);

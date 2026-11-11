@@ -105,3 +105,184 @@ export class AudioSys {
     }
   }
 }
+
+// ---------------------------------------------------------------------------
+// BGM: 琴（箏）と尺八風の和風BGMをその場で作曲・合成（陽音階）
+// ---------------------------------------------------------------------------
+const YO = [0, 2, 5, 7, 9]; // 陽音階（D E G A B）
+const ROOT = 146.83;          // D3
+const hz = (deg, oct = 0) => {
+  const n = YO.length;
+  const o = Math.floor(deg / n), d = ((deg % n) + n) % n;
+  return ROOT * Math.pow(2, oct + o + YO[d] / 12);
+};
+
+export class BGM {
+  constructor(audio) {
+    this.audio = audio;
+    this.on = true;
+    try { this.on = localStorage.getItem('keiryu.bgm') !== 'off'; } catch (e) { /* ignore */ }
+    this.mood = 'calm';
+    this.started = false;
+    this.deg = 5;
+  }
+
+  start() {
+    const a = this.audio;
+    if (!a.ctx || this.started) return;
+    this.started = true;
+    const ctx = a.ctx;
+    this.out = ctx.createGain();
+    this.out.gain.value = this.on ? 0.32 : 0;
+    // simple reverb (generated impulse response)
+    const len = ctx.sampleRate * 3;
+    const ir = ctx.createBuffer(2, len, ctx.sampleRate);
+    for (let c = 0; c < 2; c++) {
+      const d = ir.getChannelData(c);
+      for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3.2);
+    }
+    this.rev = ctx.createConvolver(); this.rev.buffer = ir;
+    const wet = ctx.createGain(); wet.gain.value = 0.45;
+    this.dry = ctx.createGain(); this.dry.gain.value = 1;
+    this.dry.connect(this.out); this.dry.connect(this.rev); this.rev.connect(wet); wet.connect(this.out);
+    this.out.connect(a.master);
+    this.startDrone();
+    this.next(ctx.currentTime + 0.5);
+  }
+
+  setOn(on) {
+    this.on = on;
+    try { localStorage.setItem('keiryu.bgm', on ? 'on' : 'off'); } catch (e) { /* ignore */ }
+    if (this.out) this.out.gain.setTargetAtTime(on ? 0.32 : 0, this.audio.ctx.currentTime, 0.4);
+  }
+
+  setMood(m) {
+    if (m === this.mood) return;
+    this.mood = m;
+    if (!this.started) return;
+    this.droneGain.gain.setTargetAtTime(m === 'fight' ? 0.05 : 0.035, this.audio.ctx.currentTime, 1);
+    if (m === 'fight') { clearTimeout(this.timer); this.next(this.audio.ctx.currentTime + 0.15); }
+  }
+
+  startDrone() {
+    const ctx = this.audio.ctx;
+    this.droneGain = ctx.createGain(); this.droneGain.gain.value = 0.035;
+    const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 500;
+    for (const [f, det] of [[ROOT / 2, -4], [ROOT / 2, 4], [ROOT * 0.75, 0]]) {
+      const o = ctx.createOscillator(); o.type = 'sine'; o.frequency.value = f; o.detune.value = det;
+      o.connect(lp); o.start();
+    }
+    const lfo = ctx.createOscillator(); lfo.frequency.value = 0.07;
+    const lg = ctx.createGain(); lg.gain.value = 0.015;
+    lfo.connect(lg); lg.connect(this.droneGain.gain); lfo.start();
+    lp.connect(this.droneGain); this.droneGain.connect(this.dry);
+  }
+
+  // 箏（琴）: 撥弦の減衰音
+  koto(f, t, vel = 1, dur = 2.2) {
+    const ctx = this.audio.ctx;
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.22 * vel, t + 0.004);
+    g.gain.exponentialRampToValueAtTime(0.06 * vel, t + 0.25);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    const lp = ctx.createBiquadFilter(); lp.type = 'lowpass';
+    lp.frequency.setValueAtTime(f * 9, t); lp.frequency.exponentialRampToValueAtTime(f * 2.2, t + 0.6);
+    const parts = [['triangle', 1, 1], ['sine', 2, 0.35], ['sine', 3.01, 0.12]];
+    for (const [type, mul, amp] of parts) {
+      const o = ctx.createOscillator(); o.type = type; o.frequency.setValueAtTime(f * mul, t);
+      const og = ctx.createGain(); og.gain.value = amp;
+      o.connect(og); og.connect(lp); o.start(t); o.stop(t + dur + 0.1);
+    }
+    lp.connect(g); g.connect(this.dry);
+  }
+
+  // 尺八風: ゆっくり立ち上がり、下からしゃくり上げ、遅れてビブラート＋息の音
+  flute(f, t, dur) {
+    const ctx = this.audio.ctx;
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.09, t + 0.35);
+    g.gain.setValueAtTime(0.09, t + dur * 0.7);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    const o = ctx.createOscillator(); o.type = 'sine';
+    o.frequency.setValueAtTime(f * 0.97, t);
+    o.frequency.exponentialRampToValueAtTime(f, t + 0.3);
+    const o2 = ctx.createOscillator(); o2.type = 'triangle'; o2.frequency.value = f;
+    const o2g = ctx.createGain(); o2g.gain.value = 0.25;
+    const vib = ctx.createOscillator(); vib.frequency.value = 5.2;
+    const vg = ctx.createGain();
+    vg.gain.setValueAtTime(0, t); vg.gain.linearRampToValueAtTime(0, t + dur * 0.4); vg.gain.linearRampToValueAtTime(f * 0.012, t + dur * 0.75);
+    vib.connect(vg); vg.connect(o.frequency); vg.connect(o2.frequency);
+    // breath noise
+    const n = ctx.createBufferSource(); n.buffer = this.audio.white; n.loop = true;
+    const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = f * 2; bp.Q.value = 2;
+    const ng = ctx.createGain(); ng.gain.value = 0.18;
+    n.connect(bp); bp.connect(ng); ng.connect(g);
+    o.connect(g); o2.connect(o2g); o2g.connect(g); g.connect(this.dry);
+    for (const s of [o, o2, vib, n]) { s.start(t); s.stop(t + dur + 0.1); }
+  }
+
+  // 太鼓風の低い打音（ファイト中）
+  drum(t, vel = 1) {
+    const ctx = this.audio.ctx;
+    const o = ctx.createOscillator(); o.type = 'sine';
+    o.frequency.setValueAtTime(110, t); o.frequency.exponentialRampToValueAtTime(48, t + 0.25);
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.28 * vel, t + 0.005); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.5);
+    o.connect(g); g.connect(this.dry); o.start(t); o.stop(t + 0.55);
+  }
+
+  step(d) { this.deg = Math.max(2, Math.min(12, this.deg + d)); return this.deg; }
+
+  // 1フレーズ分をまとめて予約し、終わる頃に次を予約する
+  next(t0) {
+    const a = this.audio;
+    if (!a.ctx) return;
+    const fight = this.mood === 'fight';
+    const beat = fight ? 0.32 : 0.62;
+    let t = t0, len;
+    const r = Math.random();
+    if (fight) {
+      // 速い琴のリズム＋太鼓
+      for (let i = 0; i < 16; i++) {
+        if (i % 4 === 0) this.drum(t + i * beat * 0.5, i % 8 === 0 ? 1 : 0.6);
+        if (Math.random() < 0.75) {
+          const d = this.step([-1, 1, 1, -2, 2][(Math.random() * 5) | 0]);
+          this.koto(hz(d), t + i * beat * 0.5, 0.6 + Math.random() * 0.3, 1.2);
+        }
+      }
+      len = 16 * beat * 0.5;
+    } else if (r < 0.55) {
+      // 琴のフレーズ（ゆったり、間をとる）
+      const n = 6 + ((Math.random() * 5) | 0);
+      let k = 0;
+      for (let i = 0; i < n; i++) {
+        const d = this.step([-1, 1, -2, 2, 1, -1, 3][(Math.random() * 7) | 0]);
+        const at = t + k * beat;
+        this.koto(hz(d), at, 0.7 + Math.random() * 0.3);
+        if (Math.random() < 0.25) this.koto(hz(d + 2), at + beat * 0.5, 0.5); // 合わせ爪風
+        k += Math.random() < 0.3 ? 2 : 1;
+      }
+      this.koto(hz(0), t + k * beat, 0.6, 3.5); // 終止（主音）
+      len = (k + 4) * beat;
+    } else if (r < 0.85) {
+      // 尺八の長い音
+      const n = 2 + ((Math.random() * 3) | 0);
+      let at = t;
+      for (let i = 0; i < n; i++) {
+        const d = this.step([-1, 1, -2, 2][(Math.random() * 4) | 0]);
+        const dur = 1.6 + Math.random() * 2.2;
+        this.flute(hz(d, 1), at, dur);
+        if (i === 0) this.koto(hz(d - 5), at, 0.5, 3);
+        at += dur + 0.15;
+      }
+      len = at - t + 2.5;
+    } else {
+      len = 4 + Math.random() * 4; // 静寂（川の音だけ）
+    }
+    const ms = Math.max(500, (t0 + len - a.ctx.currentTime - 0.3) * 1000);
+    clearTimeout(this.timer);
+    this.timer = setTimeout(() => this.next(Math.max(a.ctx.currentTime + 0.1, t0 + len)), ms);
+  }
+}

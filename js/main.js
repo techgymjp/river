@@ -7,7 +7,7 @@ import { buildSky } from './sky.js';
 import { Angler, FishingLine } from './angler.js';
 import { FishManager } from './fish.js';
 import { Game } from './game.js';
-import { AudioSys } from './audio.js';
+import { AudioSys, BGM } from './audio.js';
 import { UI } from './ui.js';
 
 const $ = (id) => document.getElementById(id);
@@ -85,13 +85,15 @@ async function build() {
   const line = new FishingLine(scene);
   const ui = new UI();
   const audio = new AudioSys();
+  const bgm = new BGM(audio);
   const game = new Game({ angler, line, fishMgr, effects, ui, audio });
   // aim marker
   const aimMesh = new THREE.Mesh(new THREE.RingGeometry(0.22, 0.3, 32).rotateX(-Math.PI / 2),
     new THREE.MeshBasicMaterial({ color: 0x7dffb0, transparent: true, opacity: 0.85, depthWrite: false }));
   aimMesh.renderOrder = 5;
   scene.add(aimMesh);
-  world = { terrain, rocks, veg, water, sky, effects, fishMgr, angler, line, ui, audio, game, aimMesh };
+  world = { terrain, rocks, veg, water, sky, effects, fishMgr, angler, line, ui, audio, bgm, game, aimMesh };
+  $('btnBgm').textContent = bgm.on ? 'BGM ON' : 'BGM OFF';
   applyPreset('morning', season);
   window.__keiryu = world;
 }
@@ -266,6 +268,11 @@ $('btnSound').addEventListener('click', () => {
   a.setEnabled(!a.enabled);
   $('btnSound').textContent = a.enabled ? '音 ON' : '音 OFF';
 });
+$('btnBgm').addEventListener('click', () => {
+  const b = world.bgm;
+  b.setOn(!b.on);
+  $('btnBgm').textContent = b.on ? 'BGM ON' : 'BGM OFF';
+});
 $('btnLog').addEventListener('click', () => world.ui.showLog(world.game.catches, world.game.records));
 $('btnHelp').addEventListener('click', () => $('helpModal').classList.add('show'));
 document.querySelectorAll('[data-close]').forEach((b) => b.addEventListener('click', () => b.closest('.modal').classList.remove('show')));
@@ -284,6 +291,7 @@ document.querySelectorAll('.chips').forEach((group) => {
 $('btnStart').addEventListener('click', () => {
   if (!world) return;
   world.audio.init();
+  world.bgm.start();
   applyPreset(choice.time, choice.season);
   $('titleScreen').classList.remove('show');
   document.body.classList.add('playing');
@@ -321,6 +329,7 @@ function frame(now) {
   // sun + shadow follow the angler
   sun.target.position.copy(game.pos);
   sun.position.copy(game.pos).addScaledVector(shared.uSunDir.value, 120);
+  world.bgm.setMood(game.state === 'fight' || game.state === 'landing' ? 'fight' : 'calm');
   audio.setAmbience(Math.abs(game.anglerZ - W.FALL_Z), 1 - W.poolFactor(game.anglerZ));
   renderer.render(scene, camera);
   requestAnimationFrame(frame);
