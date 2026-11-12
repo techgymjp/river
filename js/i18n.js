@@ -1,6 +1,27 @@
 // 日本語 / English
 const DICT = {
   ja: {
+    'btn.pause': '一時停止', 'btn.play': 'プレイ', 'btn.howto': 'あそびかた', 'btn.back': '戻る', 'btn.toTitle': 'トップに戻る',
+    'setup.title': '釣りの準備',
+    'pause.title': '一時停止', 'pause.resume': '再開', 'pause.end': '釣りを終える',
+    'over.title': '本日の釣果', 'over.again': 'もう一度', 'over.share': 'シェア', 'over.count': '{n} 尾',
+    'over.redo': '広告で掛け直し：{n} 回', 'over.none': 'まだ釣果はありません。もう一度挑戦しよう！',
+    'over.best': '最大', 'over.species': '魚種', 'over.num': '数',
+    'legal.privacy': 'プライバシーポリシー', 'legal.adSettings': '広告の設定', 'url.privacy': 'https://techgym.jp/privacy-policy/',
+    'title.best': 'ハイスコア {s} pt ／ 図鑑 {n} / {total} 種',
+    'redo.watch': '広告を見て掛け直す', 'redo.next': '次へ（{s}）', 'redo.note': '逃した魚をもう一度掛ける（残り {n} / {max} 回）',
+    'redo.loading': '広告を読み込み中…', 'redo.fail': '広告を読み込めませんでした',
+    'msg.redo': '掛け直した！ 今度は逃がすな！',
+    'share.text': '渓流釣りで {n} 尾・{s} pt！{best}', 'share.best': '最大は{fish} {size}cm。', 'share.redo': '（掛け直し {r} 回）', 'share.tag': ' #渓流釣り', 'share.dialog': '釣果をシェア',
+    'hint.idle.touch': '水面をタップして振り込み　｜　◀ ▶ ボタンで移動',
+    'msg.driftEnd.touch': '流しきり — 水面をタップして振り込み直そう',
+    'msg.outOfReach.touch': 'そこには届かない（川の中・約2〜10m）',
+    'msg.whiff.touch': '空振り…　目印が動いてから「合わせ」ボタン',
+    'hint.drift.touch': '目印が動いたら 合わせボタン か 画面をタップ！',
+    'hint.fight.touch': '画面か合わせボタンを長押しで寄せる ／ 離していなす',
+    'hint.tomo.idle.touch': '瀬をタップして、おとりを送り出す　｜　◀ ▶ ボタンで移動',
+    'hint.tomo.drift.touch': 'タップした所へおとりが泳ぐ。アユの縄張りへ送り込もう　｜　回収ボタンで回収',
+    'help.keys.touch': '<tr><td>水面をタップ</td><td>振り込み（友釣りはおとりを泳がせる）</td></tr><tr><td>合わせボタン</td><td>合わせ（友釣りは回収）／長押しで寄せ</td></tr><tr><td>◀ 上流 ／ 下流 ▶</td><td>移動</td></tr><tr><td>2本指ドラッグ ／ ピンチ</td><td>視点の回転 ／ ズーム</td></tr>',
     'title': '渓流釣り',
     'title.sub': '山あいの清流で、ヤマメ・イワナを目印釣りで、アユを友釣りで狙う。',
     'opt.method': '釣り方', 'method.bait': 'エサ釣り', 'method.tomo': '友釣り（アユ）',
@@ -55,6 +76,16 @@ const DICT = {
       <li>瀬（浅く流れの速い所）をクリックして、おとりのアユを送り出す。</li>
       <li>水面をクリックすると、おとりがそこへ泳ぎます。アユの縄張りに入ると、野アユが体当たりして掛け針に掛かります（合わせ不要）。</li>
       <li>おとりは泳ぐほど弱ります。スペースで回収して休ませるか、釣れたアユを新しいおとりにしましょう。</li></ol>`,
+    'help.body.touch': `<h3>エサ釣り</h3><ol>
+      <li><b>振り込み</b>：水面をタップ（緑の輪の所に落ちる）。</li>
+      <li><b>流し</b>：仕掛けは流れに乗って下ります。岩の裏や淵（深くて緑の濃い所）に魚が潜んでいます。</li>
+      <li><b>合わせ</b>：目印がピクッと動いたら（アタリ！）すかさず「合わせ」ボタンか画面をタップ。</li>
+      <li><b>やり取り</b>：長押しすると竿を立てて寄せ、離すと引きをいなします。テンションが赤だと糸切れ、低すぎるとバラシ。</li>
+      <li><b>取り込み</b>：魚の体力を削って手前まで寄せると自動でタモ入れ。</li></ol>
+      <h3>友釣り（アユ）</h3><ol>
+      <li>瀬（浅く流れの速い所）をタップして、おとりのアユを送り出す。</li>
+      <li>水面をタップすると、おとりがそこへ泳ぎます。アユの縄張りに入ると、野アユが体当たりして掛け針に掛かります（合わせ不要）。</li>
+      <li>おとりは泳ぐほど弱ります。「回収」ボタンで回収して休ませるか、釣れたアユを新しいおとりにしましょう。</li></ol>`,
     'help.keys': '<tr><td>A / ←</td><td>上流へ移動</td></tr><tr><td>D / →</td><td>下流へ移動</td></tr><tr><td>右ドラッグ / Q・E</td><td>視点の回転</td></tr><tr><td>ホイール / ピンチ</td><td>ズーム</td></tr><tr><td>スペース</td><td>合わせ（友釣りは回収）／長押しで寄せ</td></tr>',
     'help.tip': '魚は人の気配や着水音に敏感です。歩いて近づきすぎると逃げてしまいます。上流には滝と滝壺があります。',
     'fish.yamame.name': 'ヤマメ', 'fish.yamame.desc': '渓流の女王。体側のパーマークが美しい。警戒心が強く、アタリは一瞬。', 'fish.yamame.where': '瀬・淵の頭',
@@ -64,6 +95,27 @@ const DICT = {
     'fish.ugui.name': 'ウグイ', 'fish.ugui.desc': '渓流の外道の代表格。よくエサをつつく。', 'fish.ugui.where': '瀬・浅い流れ',
   },
   en: {
+    'btn.pause': 'Pause', 'btn.play': 'Play', 'btn.howto': 'How to play', 'btn.back': 'Back', 'btn.toTitle': 'Back to top',
+    'setup.title': 'Get ready',
+    'pause.title': 'Paused', 'pause.resume': 'Resume', 'pause.end': 'Finish fishing',
+    'over.title': "Today's catch", 'over.again': 'Play again', 'over.share': 'Share', 'over.count': '{n} fish',
+    'over.redo': 'Re-hooked with ads: {n}', 'over.none': 'No catches yet. Try again!',
+    'over.best': 'Biggest', 'over.species': 'Species', 'over.num': 'Count',
+    'legal.privacy': 'Privacy policy', 'legal.adSettings': 'Ad settings', 'url.privacy': 'https://techgym.jp/privacy-policy-en/',
+    'title.best': 'High score {s} pt / Fish book {n} / {total}',
+    'redo.watch': 'Watch an ad to re-hook', 'redo.next': 'Skip ({s})', 'redo.note': 'Hook the one that got away again ({n} / {max} left)',
+    'redo.loading': 'Loading ad…', 'redo.fail': 'Could not load an ad',
+    'msg.redo': 'Re-hooked! Don\'t let it go this time!',
+    'share.text': 'I caught {n} fish for {s} pt in Keiryu! {best}', 'share.best': 'Biggest: {fish} {size} cm.', 'share.redo': ' (re-hooked {r}x)', 'share.tag': ' #Keiryu', 'share.dialog': 'Share your catch',
+    'hint.idle.touch': 'Tap the water to cast  |  ◀ ▶ buttons: walk',
+    'msg.driftEnd.touch': 'End of the drift — tap the water to cast again',
+    'msg.outOfReach.touch': 'Out of reach (in the river, about 2–10 m)',
+    'msg.whiff.touch': 'Missed… press Strike after the markers twitch',
+    'hint.drift.touch': 'When the markers twitch, tap the Strike button or the screen!',
+    'hint.fight.touch': 'Hold the screen or Strike to pull in / release to give line',
+    'hint.tomo.idle.touch': 'Tap a riffle to send out the decoy  |  ◀ ▶ buttons: walk',
+    'hint.tomo.drift.touch': 'Tap to steer the decoy into an ayu territory  |  Retrieve button: retrieve',
+    'help.keys.touch': '<tr><td>Tap the water</td><td>Cast (steer the decoy in tomozuri)</td></tr><tr><td>Strike button</td><td>Strike (retrieve in tomozuri) / hold to pull</td></tr><tr><td>◀ Upstream / Downstream ▶</td><td>Walk</td></tr><tr><td>Two-finger drag / pinch</td><td>Rotate / zoom camera</td></tr>',
     'title': 'Keiryu',
     'title.sub': 'Fish a clear mountain stream in Japan — yamame and iwana with drift bait, ayu with a live decoy.',
     'opt.method': 'Method', 'method.bait': 'Bait drift', 'method.tomo': 'Tomozuri (ayu)',
@@ -118,6 +170,16 @@ const DICT = {
       <li>Click a riffle (shallow, fast water) to send out your live decoy ayu.</li>
       <li>Click the water to make the decoy swim there. Wild ayu defend territories and ram intruders — they get caught on the hooks behind the decoy (no strike needed).</li>
       <li>The decoy tires as it swims. Press Space to retrieve and rest it, or use a fresh catch as the new decoy.</li></ol>`,
+    'help.body.touch': `<h3>Bait drifting</h3><ol>
+      <li><b>Cast</b>: tap the water (the bait lands on the green ring).</li>
+      <li><b>Drift</b>: the bait drifts with the current. Fish hide behind rocks and in deep green pools.</li>
+      <li><b>Strike</b>: when the coloured markers twitch (BITE!), tap the Strike button or the screen right away.</li>
+      <li><b>Fight</b>: hold the screen or Strike to raise the rod and pull, release to give. Red tension snaps the line; too slack and the fish gets off.</li>
+      <li><b>Land</b>: wear the fish out and bring it close — it goes into the net automatically.</li></ol>
+      <h3>Tomozuri (ayu)</h3><ol>
+      <li>Tap a riffle (shallow, fast water) to send out your live decoy ayu.</li>
+      <li>Tap the water to make the decoy swim there. Wild ayu defend territories and ram intruders — they get caught on the hooks behind the decoy (no strike needed).</li>
+      <li>The decoy tires as it swims. Press Retrieve and rest it, or use a fresh catch as the new decoy.</li></ol>`,
     'help.keys': '<tr><td>A / ←</td><td>Walk upstream</td></tr><tr><td>D / →</td><td>Walk downstream</td></tr><tr><td>Right-drag / Q·E</td><td>Rotate camera</td></tr><tr><td>Wheel / pinch</td><td>Zoom</td></tr><tr><td>Space</td><td>Strike (retrieve in tomozuri) / hold to pull</td></tr>',
     'help.tip': 'Fish are wary of footsteps and splashes — walking too close scares them off. There is a waterfall upstream.',
     'fish.yamame.name': 'Yamame', 'fish.yamame.desc': 'Queen of the mountain stream, with beautiful parr marks. Very wary — the bite lasts an instant.', 'fish.yamame.where': 'Riffles, heads of pools',
@@ -139,6 +201,11 @@ export function t(key, params) {
   let s = DICT[lang][key] ?? DICT.ja[key] ?? key;
   if (params) for (const k in params) s = s.replaceAll('{' + k + '}', params[k]);
   return s;
+}
+// タッチ操作の端末では、あれば '.touch' の文言を使う
+const TOUCH = typeof matchMedia !== 'undefined' && matchMedia('(pointer: coarse)').matches;
+export function tt(key, params) {
+  return TOUCH && (DICT[lang][key + '.touch'] || DICT.ja[key + '.touch']) ? t(key + '.touch', params) : t(key, params);
 }
 export function fishName(key) { return t('fish.' + key + '.name'); }
 

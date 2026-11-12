@@ -12,8 +12,8 @@
 <script type="importmap">
 {
   "imports": {
-    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
-    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+    "three": "./js/vendor/three/three.module.js",
+    "three/addons/": "./js/vendor/three/addons/"
   }
 }
 </script>
@@ -28,11 +28,7 @@
   </div>
   <div id="topRight">
     <button id="btnZukan" class="btn" data-i18n="btn.zukan">図鑑</button>
-    <button id="btnLog" class="btn" data-i18n="btn.log">釣果記録</button>
-    <button id="btnBgm" class="btn">BGM ON</button>
-    <button id="btnSound" class="btn">音 ON</button>
-    <button id="btnHelp" class="btn" data-i18n="btn.help">操作</button>
-    <button id="btnLang" class="btn" data-i18n="btn.lang">English</button>
+    <button id="btnPause" class="btn" data-i18n="btn.pause">一時停止</button>
   </div>
   <div id="message"></div>
   <div id="biteAlert" data-i18n="bite">アタリ！</div>
@@ -56,9 +52,26 @@
 </div>
 
 <div id="titleScreen" class="screen">
-  <div class="card">
+  <div class="card top">
     <div class="logo big" data-i18n="title">渓流釣り</div>
     <p class="sub" data-i18n="title.sub"></p>
+    <p class="best" id="titleBest"></p>
+    <div class="topButtons">
+      <button id="btnPlay" class="btn primary big" data-i18n="btn.play">プレイ</button>
+      <button id="btnHowto" class="btn big" data-i18n="btn.howto">あそびかた</button>
+    </div>
+    <div class="legal" id="legal">
+      <span id="buildInfo"></span>
+      <a id="privacyLink" href="https://techgym.jp/privacy-policy/" target="_blank" rel="noopener" data-i18n="legal.privacy">プライバシーポリシー</a>
+      <span id="adPrivacy" hidden>｜<a href="#" id="adPrivacyLink" data-i18n="legal.adSettings">広告の設定</a></span>
+      ｜<button id="btnLang2" class="linkbtn" data-i18n="btn.lang">English</button>
+    </div>
+  </div>
+</div>
+
+<div id="setupScreen" class="screen">
+  <div class="card">
+    <h2 data-i18n="setup.title">釣りの準備</h2>
     <div class="opt">
       <div class="label" data-i18n="opt.method">釣り方</div>
       <div class="chips" data-key="method">
@@ -82,9 +95,49 @@
         <button data-val="autumn" class="on" data-i18n="season.autumn">紅葉</button>
       </div>
     </div>
-    <button id="btnStart" class="btn primary" data-i18n="start">釣りを始める</button>
-    <p class="tiny" id="titleTip" data-i18n="title.tip"></p>
-    <p class="tiny"><button id="btnLang2" class="linkbtn" data-i18n="btn.lang">English</button></p>
+    <p class="tiny" id="titleTip"></p>
+    <div class="buttons">
+      <button id="btnStart" class="btn primary big" data-i18n="start">釣りを始める</button>
+      <button id="btnSetupBack" class="btn" data-i18n="btn.back">戻る</button>
+    </div>
+  </div>
+</div>
+
+<div id="pauseScreen" class="modal">
+  <div class="card pause">
+    <h2 data-i18n="pause.title">一時停止</h2>
+    <div class="menu">
+      <button id="btnResume" class="btn primary big" data-i18n="pause.resume">再開</button>
+      <button id="btnPauseHelp" class="btn" data-i18n="btn.howto">あそびかた</button>
+      <button id="btnLog" class="btn" data-i18n="btn.log">釣果記録</button>
+      <button id="btnBgm" class="btn">BGM ON</button>
+      <button id="btnSound" class="btn">音 ON</button>
+      <button id="btnLang" class="btn" data-i18n="btn.lang">English</button>
+      <button id="btnEnd" class="btn" data-i18n="pause.end">釣りを終える</button>
+      <button id="btnPauseTitle" class="btn" data-i18n="btn.toTitle">トップに戻る</button>
+    </div>
+  </div>
+</div>
+
+<div id="overScreen" class="screen">
+  <div class="card over">
+    <h2 data-i18n="over.title">本日の釣果</h2>
+    <div class="overScore"><b id="overScore">0</b> pt　<span id="overCount"></span></div>
+    <div id="overBody"></div>
+    <p class="tiny" id="overRedo"></p>
+    <div class="buttons">
+      <button id="btnAgain" class="btn primary big" data-i18n="over.again">もう一度</button>
+      <button id="btnShare" class="btn" data-i18n="over.share" hidden>シェア</button>
+      <button id="btnOverTitle" class="btn" data-i18n="btn.toTitle">トップに戻る</button>
+    </div>
+  </div>
+</div>
+
+<div id="redo" hidden>
+  <div class="redoText" id="redoNote"></div>
+  <div class="buttons">
+    <button id="redoWatch" class="btn primary"></button>
+    <button id="redoNext" class="btn"></button>
   </div>
 </div>
 
@@ -123,13 +176,15 @@
 <div id="helpModal" class="modal closable">
   <div class="card help">
     <h2 data-i18n="help.title">遊び方</h2>
-    <div data-i18n-html="help.body"></div>
-    <table data-i18n-html="help.keys"></table>
+    <div id="helpBody"></div>
+    <table id="helpKeys"></table>
     <p class="tiny" data-i18n="help.tip"></p>
     <button class="btn" data-close data-i18n="btn.close">閉じる</button>
   </div>
 </div>
 
+<script src="js/ads-config.js"></script>
+<script src="js/build-info.js"></script>
 <script type="module" src="js/main.js"></script>
 </body>
 </html>

@@ -1,6 +1,16 @@
 // Procedural audio: stream ambience, waterfall, birds, and sound effects (WebAudio, no assets)
 export class AudioSys {
-  constructor() { this.ctx = null; this.enabled = true; }
+  constructor() { this.ctx = null; this.enabled = true; this.holds = new Set(); }
+
+  // 広告の表示中・別アプリに切り替えた間は音を止める（理由ごとに止め、すべて外れたら再開）
+  suspend(reason = 'ad') {
+    this.holds.add(reason);
+    if (this.ctx && this.ctx.state === 'running') this.ctx.suspend().catch(() => {});
+  }
+  resume(reason = 'ad') {
+    this.holds.delete(reason);
+    if (this.ctx && !this.holds.size && this.ctx.state !== 'running') this.ctx.resume().catch(() => {});
+  }
 
   init() {
     if (this.ctx) { this.ctx.resume(); return; }
@@ -10,7 +20,7 @@ export class AudioSys {
     try { ctx = new AC({ latencyHint: 'playback' }); } catch (e) { ctx = new AC(); }
     this.ctx = ctx;
     // iOS などで中断された音声を、画面に戻ったとき・触れたときに再開する
-    const resume = () => { if (ctx.state !== 'running') ctx.resume().catch(() => {}); };
+    const resume = () => { if (!this.holds.size && ctx.state !== 'running') ctx.resume().catch(() => {}); };
     document.addEventListener('visibilitychange', () => { if (!document.hidden) resume(); });
     window.addEventListener('pointerdown', resume, { passive: true });
     window.addEventListener('keydown', resume);

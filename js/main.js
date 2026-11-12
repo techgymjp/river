@@ -10,7 +10,9 @@ import { Game } from './game.js';
 import { AudioSys, BGM } from './audio.js';
 import { UI } from './ui.js';
 import { createFishMesh } from './fish.js';
-import { t, setLang, getLang, applyStatic, onLangChange } from './i18n.js';
+import { t, tt, setLang, getLang, applyStatic, onLangChange, fishName } from './i18n.js';
+import { Ads, isNative, plugin } from './ads.js';
+import { TOUCH } from './game.js';
 
 applyStatic();
 
@@ -105,7 +107,9 @@ async function build() {
   world = { terrain, rocks, veg, water, sky, effects, fishMgr, angler, line, ui, audio, bgm, game, aimMesh };
   refreshButtons();
   applyPreset('morning', season);
-  window.__keiryu = world;
+  game.onFishLost = () => offerRedo();
+  Ads.setSound(audio);
+  window.__keiryu = world; // @web-only（テスト・撮影用）
 }
 
 function applyPreset(timeKey, seasonKey) {
@@ -142,7 +146,7 @@ function updateCamera(dt, titleMode) {
   if (!cam.init) { cam.focus.copy(_f); }
   cam.focus.lerp(_f, Math.min(1, dt * 2.5));
   let yaw = cam.yaw, pitch = cam.pitch, dist = cam.dist;
-  if (titleMode) { yaw = -0.32 + Math.sin(performance.now() * 0.00008) * 0.45; pitch = 0.22; dist = 12; }
+  if (titleMode) { yaw = -0.32 + Math.sin(performance.now() * 0.00008) * 0.22; pitch = 0.22; dist = 12; }
   const desired = new THREE.Vector3(
     cam.focus.x + Math.sin(yaw) * Math.cos(pitch) * dist,
     cam.focus.y + Math.sin(pitch) * dist,
@@ -178,7 +182,7 @@ const pointers = new Map();
 let rotating = false, pinch = null;
 canvas.addEventListener('contextmenu', (e) => e.preventDefault());
 canvas.addEventListener('pointerdown', (e) => {
-  if (!world || world.game.state === 'title') return;
+  if (!world || screen !== 'play') return;
   canvas.setPointerCapture(e.pointerId);
   pointers.set(e.pointerId, { x: e.clientX, y: e.clientY, sx: e.clientX, sy: e.clientY, type: e.pointerType });
   const game = world.game;
@@ -239,7 +243,15 @@ function updateWalk() {
   world.game.walkDir = up && !down ? -1 : down && !up ? 1 : 0;
 }
 window.addEventListener('keydown', (e) => {
-  if (!world || world.game.state === 'title') return;
+  if (!world) return;
+  if (e.code === 'Escape') {
+    const open = [...document.querySelectorAll('.modal.closable.show')];
+    if (open.length) { open.forEach((m) => m.classList.remove('show')); if (open.some((m) => m.id === 'helpModal')) onHelpClosed(); }
+    else if (screen === 'play') pauseGame();
+    else if (screen === 'paused') resumeGame();
+    return;
+  }
+  if (screen !== 'play') return;
   if (e.repeat && e.code === 'Space') { e.preventDefault(); return; }
   keys.add(e.code);
   const game = world.game;
@@ -250,7 +262,6 @@ window.addEventListener('keydown', (e) => {
   }
   if (e.code === 'KeyQ') cam.yaw += 0.15;
   if (e.code === 'KeyE') cam.yaw -= 0.15;
-  if (e.code === 'Escape') document.querySelectorAll('.modal.closable.show').forEach((m) => m.classList.remove('show'));
   updateWalk();
 });
 window.addEventListener('keyup', (e) => {
@@ -298,10 +309,229 @@ onLangChange(() => {
 });
 $('btnZukan').addEventListener('click', () => world.ui.showZukan(world.game.records));
 $('btnLog').addEventListener('click', () => world.ui.showLog(world.game.catches, world.game.records));
-$('btnHelp').addEventListener('click', () => $('helpModal').classList.add('show'));
-document.querySelectorAll('[data-close]').forEach((b) => b.addEventListener('click', () => b.closest('.modal').classList.remove('show')));
+document.querySelectorAll('[data-close]').forEach((b) => b.addEventListener('click', () => {
+  const m = b.closest('.modal');
+  m.classList.remove('show');
+  if (m.id === 'helpModal') onHelpClosed();
+}));
 
-// option chips on the title screen
+// ------------------------------------------------------------------ 画面の流れ
+// title（トップ）→ setup（釣りの準備）→ play ⇄ paused → over（本日の釣果）→ title / play
+let screen = 'loading';
+let helpFrom = null;          // あそびかたをどこから開いたか（'title' | 'pause'）
+let adBusy = false;
+const isPlaying = () => screen === 'play';
+
+function showScreen(name) {
+  screen = name;
+  $('titleScreen').classList.toggle('show', name === 'title');
+  $('setupScreen').classList.toggle('show', name === 'setup');
+  $('pauseScreen').classList.toggle('show', name === 'paused' && !adBusy);
+  $('overScreen').classList.toggle('show', name === 'over');
+  document.body.classList.toggle('playing', name === 'play' || name === 'paused');
+  if (name === 'title') updateTitleBest();
+  updateBanner();
+}
+
+// 全画面広告（アプリのみ）：プレイ開始・トップに戻る・ポーズからの再開・もう一度 のたびに毎回出す
+async function withInterstitial(next) {
+  if (adBusy) return;
+  if (Ads.available) {
+    adBusy = true;
+    $('pauseScreen').classList.remove('show');
+    updateBanner();
+    await Ads.showInterstitial(3000);
+    adBusy = false;
+  }
+  next();
+}
+
+// バナー（アプリのみ）：トップ・あそびかた・ポーズ・結果画面だけ（プレイ中は操作ボタンと重なるので出さない）
+function updateBanner() {
+  const helpOpen = $('helpModal').classList.contains('show');
+  const want = screen === 'title' || screen === 'setup' || screen === 'paused' || screen === 'over' || helpOpen;
+  Ads.setBanner(want && !adBusy);
+  document.body.classList.toggle('bannerSpace', want && Ads.bannerOn);
+}
+
+function updateTitleBest() {
+  if (!world) return;
+  const r = world.game.records, keys = Object.keys(world.game.records.count || {});
+  const n = keys.filter((k) => r.count[k] > 0).length;
+  $('titleBest').textContent = t('title.best', { s: r.hiscore || 0, n, total: 5 });
+}
+
+function openHelp(from) {
+  helpFrom = from;
+  $('helpKeys').innerHTML = t(TOUCH ? 'help.keys.touch' : 'help.keys');
+  $('helpBody').innerHTML = tt('help.body');
+  $('helpModal').classList.add('show');
+  updateBanner();
+}
+function onHelpClosed() {
+  const from = helpFrom;
+  helpFrom = null;
+  updateBanner();
+  // トップ画面に戻るときは全画面広告
+  if (from === 'title') withInterstitial(() => showScreen('title'));
+}
+
+function pauseGame() {
+  if (screen !== 'play') return;
+  world.game.setPulling(false);
+  keys.clear(); updateWalk();
+  showScreen('paused');
+}
+function resumeGame() { withInterstitial(() => { if (screen === 'paused') showScreen('play'); }); }
+function goTitle() {
+  withInterstitial(() => {
+    closeRedo();
+    world.game.toTitle();
+    document.querySelectorAll('.modal.show').forEach((m) => m.classList.remove('show'));
+    showScreen('title');
+  });
+}
+
+function startFishing() {
+  world.audio.init();
+  world.bgm.start();
+  applyPreset(choice.time, choice.season);
+  const T = TIMES[choice.time];
+  const tomo = choice.method === 'tomo';
+  world.game.start(T.bite, T.clock, tomo);
+  showScreen('play');
+  world.ui.flash(t(tomo ? 'msg.tomo.start' : 'msg.start', { season: t('season.' + choice.season), time: t('time.' + choice.time) }), tomo ? 5 : 3);
+}
+
+// 釣行を終えて結果画面へ
+function endSession() {
+  closeRedo();
+  const g = world.game;
+  g.toTitle();
+  const counts = {}, best = {};
+  for (const c of g.catches) { counts[c.key] = (counts[c.key] || 0) + 1; best[c.key] = Math.max(best[c.key] || 0, c.size); }
+  $('overScore').textContent = g.score;
+  $('overCount').textContent = t('over.count', { n: g.catches.length });
+  $('overBody').innerHTML = g.catches.length
+    ? `<table><thead><tr><th>${t('over.species')}</th><th>${t('over.num')}</th><th>${t('over.best')}</th></tr></thead><tbody>`
+      + Object.keys(counts).map((k) => `<tr><td>${fishName(k)}</td><td>${counts[k]}</td><td>${best[k].toFixed(1)} cm</td></tr>`).join('') + '</tbody></table>'
+    : `<p>${t('over.none')}</p>`;
+  $('overRedo').textContent = g.redoUsed ? t('over.redo', { n: g.redoUsed }) : '';
+  $('btnShare').hidden = !(plugin('Share') || navigator.share) || !g.catches.length;
+  showScreen('over');
+}
+
+function shareText() {
+  const g = world.game;
+  let top = null;
+  for (const c of g.catches) if (!top || c.size > top.size) top = c;
+  const bestTxt = top ? t('share.best', { fish: fishName(top.key), size: top.size.toFixed(1) }) : '';
+  return t('share.text', { n: g.catches.length, s: g.score, best: bestTxt })
+    + (g.redoUsed ? t('share.redo', { r: g.redoUsed }) : '') + t('share.tag');
+}
+$('btnShare').addEventListener('click', async () => {
+  const text = shareText();
+  const native = plugin('Share');
+  try {
+    if (native) await native.share({ title: t('title'), text, dialogTitle: t('share.dialog') });
+    else if (navigator.share) await navigator.share({ title: t('title'), text });
+  } catch (e) { /* キャンセル */ }
+});
+
+// ボタン
+$('btnPlay').addEventListener('click', () => { world.audio.init(); showScreen('setup'); });
+$('btnHowto').addEventListener('click', () => openHelp('title'));
+$('btnSetupBack').addEventListener('click', () => showScreen('title'));
+$('btnStart').addEventListener('click', () => withInterstitial(startFishing));
+$('btnPause').addEventListener('click', pauseGame);
+$('btnResume').addEventListener('click', resumeGame);
+$('btnPauseHelp').addEventListener('click', () => openHelp('pause'));
+$('btnEnd').addEventListener('click', endSession);
+$('btnPauseTitle').addEventListener('click', goTitle);
+$('btnAgain').addEventListener('click', () => withInterstitial(startFishing));
+$('btnOverTitle').addEventListener('click', goTitle);
+
+// Android の戻るボタン：プレイ中はポーズ（ポーズ中なら再開）、開いている画面があれば閉じる。トップ・結果画面ではアプリを終了
+if (plugin('App')) {
+  plugin('App').addListener('backButton', () => {
+    const open = [...document.querySelectorAll('.modal.closable.show')];
+    if (open.length) { open.forEach((m) => m.classList.remove('show')); if (open.some((m) => m.id === 'helpModal')) onHelpClosed(); return; }
+    if ($('resultModal').classList.contains('show')) return;
+    if (screen === 'title' || screen === 'over') plugin('App').exitApp();
+    else if (screen === 'setup') showScreen('title');
+    else if (screen === 'paused') resumeGame();
+    else if (screen === 'play') pauseGame();
+  });
+}
+
+// 別のアプリに切り替えたら一時停止して音を止める（広告の表示中は広告側が音を止めている）
+document.addEventListener('visibilitychange', () => {
+  if (!world) return;
+  if (document.hidden) {
+    if (screen === 'play' && !Ads.showing) pauseGame();
+    world.audio.suspend('hidden');
+  } else {
+    world.audio.resume('hidden');
+  }
+});
+
+// ---------- リワード広告：逃がした魚を「掛け直す」（アプリのみ・1 回の釣行で 5 回まで） ----------
+// 糸切れ・バラシのあと、魚が逃げていく様子を見届けられるよう少し待ってから案内を出し、数秒で自動的に消す
+const REDO_DELAY = 3, REDO_WAIT = 6, REDO_MAX = 5;
+const redo = { active: false, busy: false, t: 0, pending: 0 };
+function offerRedo() {
+  if (!Ads.canReward || (world.game.redoUsed || 0) >= REDO_MAX) return;
+  redo.pending = REDO_DELAY;
+}
+function showRedo() {
+  Object.assign(redo, { active: true, busy: false, t: REDO_WAIT, pending: 0 });
+  $('redoWatch').disabled = false;
+  $('redoWatch').textContent = t('redo.watch');
+  $('redoNote').textContent = t('redo.note', { n: REDO_MAX - (world.game.redoUsed || 0), max: REDO_MAX });
+  $('redo').hidden = false;
+}
+function closeRedo() { redo.active = false; redo.pending = 0; $('redo').hidden = true; }
+function updateRedo(dt) {
+  if (screen !== 'play') return;
+  if (redo.pending > 0) {
+    redo.pending -= dt;
+    const st = world.game.state;
+    if (st === 'fight' || st === 'landing' || st === 'result') { redo.pending = 0; return; } // 別の魚が掛かったら出さない
+    if (redo.pending <= 0) showRedo();
+    return;
+  }
+  if (!redo.active || redo.busy) return;
+  redo.t -= dt;
+  $('redoNext').textContent = t('redo.next', { s: Math.max(0, Math.ceil(redo.t)) });
+  if (redo.t <= 0) closeRedo();
+}
+$('redoNext').addEventListener('click', closeRedo);
+$('redoWatch').addEventListener('click', async () => {
+  if (!redo.active || redo.busy) return;
+  redo.busy = true;
+  $('redoWatch').disabled = true;
+  $('redoWatch').textContent = t('redo.loading');
+  const result = await Ads.showRewarded();
+  if (!redo.active) return;
+  if (result === 'unavailable') {
+    $('redoNote').textContent = t('redo.fail');
+    setTimeout(closeRedo, 2000);
+    return;
+  }
+  closeRedo();
+  if (result === 'rewarded' && screen === 'play') world.game.redoFight();
+});
+for (const ev of ['pointerdown', 'pointerup']) $('redo').addEventListener(ev, (e) => e.stopPropagation());
+
+// トップ画面の下に、バージョン（アプリ版）・プライバシーポリシー・広告の設定（EU など）
+if (window.APP_VERSION && window.APP_VERSION !== 'dev') $('buildInfo').textContent = window.APP_VERSION + '｜';
+Ads.initDone.then(() => { if (Ads.privacyOptionsRequired) $('adPrivacy').hidden = false; });
+$('adPrivacyLink').addEventListener('click', (e) => { e.preventDefault(); Ads.showPrivacyOptions(); });
+const updatePrivacyLink = () => { $('privacyLink').href = t('url.privacy'); };
+updatePrivacyLink();
+onLangChange(() => { updatePrivacyLink(); updateTitleBest(); if (helpFrom) { $('helpKeys').innerHTML = t(TOUCH ? 'help.keys.touch' : 'help.keys'); $('helpBody').innerHTML = tt('help.body'); } });
+
+// option chips on the setup screen
 const choice = { method: 'bait', time: 'morning', season: 'autumn' };
 function selectChip(key, val) {
   choice[key] = val;
@@ -326,18 +556,6 @@ document.querySelectorAll('.chips').forEach((group) => {
   });
 });
 updateTitleTip();
-$('btnStart').addEventListener('click', () => {
-  if (!world) return;
-  world.audio.init();
-  world.bgm.start();
-  applyPreset(choice.time, choice.season);
-  $('titleScreen').classList.remove('show');
-  document.body.classList.add('playing');
-  const T = TIMES[choice.time];
-  const tomo = choice.method === 'tomo';
-  world.game.start(T.bite, T.clock, tomo);
-  world.ui.flash(t(tomo ? 'msg.tomo.start' : 'msg.start', { season: t('season.' + choice.season), time: t('time.' + choice.time) }), tomo ? 5 : 3);
-});
 
 window.addEventListener('resize', () => {
   camera.aspect = window.innerWidth / window.innerHeight;
@@ -346,15 +564,20 @@ window.addEventListener('resize', () => {
 });
 
 // ------------------------------------------------------------------ loop
-const DT_MAX = parseFloat(new URLSearchParams(location.search).get('dtmax')) || 0.05;
+const DT_MAX = 0.05;
+let dtMax = DT_MAX;
+dtMax = parseFloat(new URLSearchParams(location.search).get('dtmax')) || DT_MAX; // @web-only（テスト用）
 let last = performance.now();
 function frame(now) {
-  const dt = Math.min(DT_MAX, (now - last) / 1000);
+  const dt = Math.min(dtMax, (now - last) / 1000);
   last = now;
   shared.uTime.value += dt;
   const { game, effects, aimMesh, sky, audio } = world;
-  game.update(dt);
-  effects.update(dt, game.anglerZ);
+  if (screen !== 'paused') {
+    game.update(dt);
+    effects.update(dt, game.anglerZ);
+    updateRedo(dt);
+  }
   // aim marker
   const showAim = game.aim.has && (game.state === 'idle' || game.state === 'drift');
   aimMesh.visible = showAim;
@@ -376,7 +599,7 @@ function frame(now) {
 
 build().then(() => {
   $('loading').classList.remove('show');
-  $('titleScreen').classList.add('show');
+  showScreen('title');
   last = performance.now();
   requestAnimationFrame(frame);
 }).catch((err) => {

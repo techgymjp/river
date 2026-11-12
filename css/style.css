@@ -1,6 +1,6 @@
 :root {
   --ink: #1d2420;
-  --paper: rgba(247, 243, 233, 0.92);
+  --paper: rgba(247, 243, 233, 0.98);
   --paper-2: rgba(247, 243, 233, 0.78);
   --accent: #2f6b55;
   --accent-2: #c8502e;
@@ -28,7 +28,7 @@ body.playing #hud { opacity: 1; }
 #topLeft { position: absolute; top: 12px; left: 12px; padding: 8px 14px; }
 #topLeft .stats { font-size: 13px; margin-top: 2px; }
 #topRight { position: absolute; top: 12px; right: 12px; display: flex; gap: 6px; }
-#message { position: absolute; left: 50%; bottom: 28px; transform: translateX(-50%); max-width: min(92vw, 720px);
+#message { position: absolute; left: 50%; bottom: 28px; transform: translateX(-50%); width: max-content; max-width: min(92vw, 720px); box-sizing: border-box;
   background: rgba(15, 22, 19, 0.62); color: #f3efe2; padding: 9px 18px; border-radius: 999px; font-size: 14px;
   text-align: center; opacity: 0; transition: opacity .25s; }
 #message.show { opacity: 1; }
@@ -57,6 +57,7 @@ body.playing #hud { opacity: 1; }
 @media (pointer: coarse) {
   #mobileControls { display: flex; }
   #message { bottom: 12px; font-size: 12px; }
+  #mobileControls { bottom: 52px; }
   #fightHud { bottom: 176px; }
 }
 
@@ -116,3 +117,50 @@ body.playing #hud { opacity: 1; }
 .zcard td { padding: 2px 4px; }
 @media (max-width: 600px) { #topRight .btn { font-size: 12px; padding: 6px 8px; } }
 @media (max-height: 620px) { .logo.big { font-size: 40px; } .opt { margin: 6px 0; } #btnStart { margin-top: 6px; } .card { padding: 16px 22px; } }
+
+/* ---------- アプリ用の画面（トップ・準備・ポーズ・結果・掛け直し） ---------- */
+.card.top { text-align: center; padding: 28px 36px; }
+.card.top .sub { font-size: 16px; }
+.best { font-size: 16px; font-weight: 700; color: var(--accent); margin: 6px 0 16px; }
+.topButtons, .buttons { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+.btn.big { font-size: 20px; padding: 12px 34px; border-radius: 10px; }
+.legal { margin-top: 16px; font-size: 12px; color: #5a625c; }
+.legal a { color: var(--accent); }
+#setupScreen .card, .card.over { text-align: center; }
+#setupScreen { background: rgba(10, 18, 15, 0.35); }
+.card.pause { text-align: center; width: min(92vw, 460px); }
+.pause .menu { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.pause .menu .big { grid-column: 1 / -1; }
+#overScreen { background: rgba(10, 18, 15, 0.45); }
+.card.over { width: min(92vw, 460px); }
+.overScore { font-size: 18px; margin: 4px 0 8px; }
+.overScore b { font-size: 34px; color: var(--accent-2); }
+#redo { position: fixed; left: 50%; top: 32%; transform: translate(-50%, -50%); z-index: 15; background: var(--paper);
+  border-radius: 12px; padding: 14px 18px; box-shadow: 0 10px 40px rgba(0, 0, 0, .35); text-align: center; width: min(90vw, 380px); }
+#redo .redoText { font-size: 14px; margin-bottom: 10px; }
+#topRight #btnPause { font-weight: 700; }
+/* バナー広告（画面下 50dp ほど）と重ならないように */
+body.bannerSpace .screen, body.bannerSpace .modal { padding-bottom: 56px; }
+/* 横向きのスマホ（高さが小さい） */
+@media (max-height: 500px) {
+  .card { padding: 12px 18px; max-height: 94vh; }
+  .card.top { padding: 14px 24px; }
+  .logo.big { font-size: 34px; }
+  .card.top .sub { font-size: 13px; margin: 2px 0 4px; }
+  .best { margin: 2px 0 8px; font-size: 14px; }
+  .btn.big { font-size: 17px; padding: 9px 26px; }
+  .legal { margin-top: 8px; }
+  .card h2 { font-size: 18px; margin-bottom: 4px; }
+  .opt { margin: 4px 0; }
+  .chips button { padding: 5px 12px; font-size: 13px; }
+  .pause .menu { gap: 6px; }
+  .pause .menu .btn { padding: 6px 10px; }
+  #fishPreview { height: 110px; }
+  .fishname { font-size: 24px; }
+  #fightHud { bottom: 10px; width: min(52vw, 380px); padding: 6px 10px; }
+  #mobileControls { bottom: 10px; }
+  #mobileControls .strike { width: 78px; height: 78px; font-size: 14px; }
+  #message { bottom: auto; top: 12px; max-width: 46vw; }
+  #decoyHud { top: 64px; }
+  .zukan #zukanBody { grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); }
+}

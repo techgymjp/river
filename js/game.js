@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import * as W from './world.js';
 import { SPECIES } from './fish.js';
 import { ROD_LEN } from './angler.js';
-import { t } from './i18n.js';
+import { t, tt } from './i18n.js';
 
 export const LINE_LEN = 6.5;
 export const CAST_MIN = 2.2, CAST_MAX = 9.8;
@@ -28,6 +28,7 @@ function saveRecords(r) { try { localStorage.setItem('keiryu.records', JSON.stri
 
 const HINT = { idle: 'hint.idle', drift: 'hint.drift', fight: 'hint.fight', landing: 'hint.landing' };
 const HINT_TOMO = { idle: 'hint.tomo.idle', drift: 'hint.tomo.drift' };
+export const TOUCH = typeof matchMedia !== 'undefined' && matchMedia('(pointer: coarse)').matches;
 
 export class Game {
   constructor({ angler, line, fishMgr, effects, ui, audio }) {
@@ -73,10 +74,17 @@ export class Game {
 
   refreshHint() {
     const k = (this.tomo && HINT_TOMO[this.state]) || HINT[this.state];
-    if (k) this.ui.hint(t(k));
+    if (!k) return;
+    // タッチ操作のとき（スマホ・アプリ）は、キー名ではなくボタン名で案内する
+    const touch = TOUCH && t(k + '.touch') !== k + '.touch';
+    this.ui.hint(t(touch ? k + '.touch' : k));
   }
 
   start(timeMul, clockMin, tomo = false) {
+    // 新しい釣行（セッション）を始める
+    this.score = 0; this.catches = []; this.redoUsed = 0; this.lastLost = null;
+    this.fight = null; this.pulling = false; this.netOut = 0;
+    this.ui.fight(false); this.ui.bite(false);
     this.timeMul = timeMul;
     this.clockMin = clockMin;
     this.tomo = tomo;
@@ -118,7 +126,7 @@ export class Game {
       return;
     }
     if ((this.state === 'idle' || this.state === 'drift') && this.aim.valid) this.cast();
-    else if (this.state === 'idle' && this.aim.has && !this.aim.valid) this.ui.flash(t('msg.outOfReach'), 1.5);
+    else if (this.state === 'idle' && this.aim.has && !this.aim.valid) this.ui.flash(tt('msg.outOfReach'), 1.5);
   }
 
   setPulling(on) { this.pulling = on; }
@@ -143,7 +151,7 @@ export class Game {
       this.fishMgr.spookNear(this.bait.pos, 2.0, 0.8);
       this.rodPitch += 0.3;
       this.retrieve();
-      this.ui.flash(t('msg.whiff'), 2);
+      this.ui.flash(tt('msg.whiff'), 2);
     }
   }
 
@@ -385,7 +393,7 @@ export class Game {
     b.dragT = drag || snag ? b.dragT + dt : Math.max(0, b.dragT - dt);
     if (b.dragT > 2.5 && !this.driftEndShown) {
       this.driftEndShown = true;
-      this.ui.flash(t('msg.driftEnd'), 3);
+      this.ui.flash(tt('msg.driftEnd'), 3);
     }
     this.bendAmt = THREE.MathUtils.damp(this.bendAmt, 0.08 + 0.2 * this.taut * this.taut, 4, dt);
     this.bendDir.subVectors(b.pos, this.tip).normalize();
@@ -553,14 +561,48 @@ export class Game {
 
   endFight(kind) {
     const f = this.fight.fish;
+    // リワード広告で「掛け直す」ために、逃がす直前の様子を覚えておく
+    this.lastLost = {
+      fish: f, pos: f.pos.clone(), heading: f.heading, fight: { ...this.fight, runDir: this.fight.runDir.clone() },
+      decoyVigor: this.decoyVigor, kind,
+    };
     f.state = 'hold';
     f.pitch = 0;
     this.fishMgr.startFlee(f, this.pos);
     this.ui.fight(false);
     this.retrieve();
     this.bendAmt = 0.05;
-    if (kind === 'break') { this.audio.snap(); this.vibe(300); this.ui.flash(t('msg.break'), 3); if (this.tomo) { this.decoyVigor = 0.8; setTimeout(() => this.ui.flash(t('msg.tomo.lostOtori'), 3), 3000); } }
+    if (kind === 'break') { this.audio.snap(); this.vibe(300); this.ui.flash(t('msg.break'), 3); if (this.tomo) { this.decoyVigor = 0.8; clearTimeout(this.lostMsgTimer); this.lostMsgTimer = setTimeout(() => this.ui.flash(t('msg.tomo.lostOtori'), 3), 3000); } }
+    if (this.onFishLost) this.onFishLost(kind);
     else { this.audio.fail(); this.vibe([40, 90, 40]); this.ui.flash(t('msg.lost'), 3); }
+  }
+
+  // リワード広告を最後まで見たとき：逃がした魚を、逃がす直前の状態でもう一度掛ける
+  redoFight() {
+    const L = this.lastLost;
+    if (!L || L.fish.state === 'gone') return false;
+    clearTimeout(this.lostMsgTimer);
+    const f = L.fish;
+    f.pos.copy(L.pos); f.heading = L.heading; f.pitch = 0;
+    f.state = 'hooked';
+    this.fight = { ...L.fight, fish: f, tension: 0.5, high: 0, low: 0, jump: 0, jumped: false, runT: 0.8 };
+    if (this.tomo) this.decoyVigor = L.decoyVigor;
+    this.lastLost = null;
+    this.redoUsed = (this.redoUsed || 0) + 1;
+    this.pulling = false;
+    this.ui.bite(false);
+    this.setState('fight');
+    this.ui.fight(true);
+    this.ui.flash(t('msg.redo'), 2);
+    this.audio.splash(0.6);
+    this.effects.splash(new THREE.Vector3(f.pos.x, W.waterLevel(f.pos.z), f.pos.z), 12, 1);
+    return true;
+  }
+
+  toTitle() {
+    this.fight = null; this.pulling = false; this.walkDir = 0;
+    this.ui.fight(false); this.ui.bite(false);
+    this.state = 'title'; this.stateT = 0;
   }
 
   startLanding() {

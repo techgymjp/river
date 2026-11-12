@@ -46,6 +46,39 @@
 - 川のせせらぎ・滝の音・野鳥、琴と尺八風の和風BGM（Web Audio で合成。ファイト中は太鼓入りの速い曲に）
 - スマホの振動（アタリ・掛かり・魚の引き・ジャンプ・糸切れ警告。iPhone の Safari は非対応）
 
+## Android アプリ
+
+[Capacitor](https://capacitorjs.com/) でゲームのファイルをアプリに同梱しています（オフラインで遊べます）。パッケージ名は `jp.techgym.river`。
+
+- 動作確認用 APK（テスト広告・デバッグ署名）のリリース画面：https://github.com/techgymjp/river/releases/tag/android-latest
+- APK を直接ダウンロード：https://github.com/techgymjp/river/releases/latest/download/keiryu.apk
+- スマホで読み取る QR コード（リリース画面）：
+
+  ![APK のリリース画面の QR コード](docs/apk-qr.png)
+
+`main` に push すると GitHub Actions（`.github/workflows/android.yml`）が APK をビルドして上のリリースに載せます。
+GitHub Secrets（`ANDROID_KEYSTORE_BASE64` など 4 つ）を登録すると、Google Play 用の署名付き AAB（本番広告）も Artifact に作られます。
+
+広告（AdMob）はアプリのときだけ出ます（Web 版では出ません）。
+
+| 種類 | 出す場面 |
+| --- | --- |
+| バナー | トップ・釣りの準備・あそびかた・一時停止・本日の釣果の画面だけ（プレイ中は出さない） |
+| 全画面広告 | 「釣りを始める」「一時停止からの再開」「トップに戻る」「もう一度」のたび |
+| リワード広告 | 糸切れ・バラシで逃がした魚を、広告を見て「掛け直す」（1 回の釣行で 5 回まで。本日の釣果とシェア文に回数を表示） |
+
+```bash
+npm ci
+```
+
+```bash
+npm run android:sync
+```
+
+```bash
+npm run android:open
+```
+
 ## ローカルで動かす
 
 ES Modules を使うため、ローカルサーバー経由で開いてください。
@@ -54,10 +87,16 @@ ES Modules を使うため、ローカルサーバー経由で開いてくださ
 python3 -m http.server 8000
 ```
 
-ブラウザで http://localhost:8000 を開きます。
+ブラウザで http://localhost:8000 を開きます。Three.js は `js/vendor/three/` に同梱しています。
 
 ## 公開
 
 `main` ブランチのルートを GitHub Pages で公開しています（push すると自動で再デプロイ）。
 
 https://techgymjp.github.io/river/
+
+## ライセンス
+
+著作権はテックジム株式会社に帰属します（All rights reserved）。許可なく複製・改変・再配布すること、Web サイトやアプリ（Google Play・App Store など）として公開・販売すること、名前・アイコン・画像を使うことを禁止します。
+テックジムの受講生が学習目的で複製・改変することは許可します（アプリストアでの公開・広告の掲載・販売などの商用利用は不可、著作権表示は残す）。
+同梱している Three.js は MIT License です。詳しくは [LICENSE](LICENSE) を見てください。
