@@ -29,5 +29,6 @@ if (app) {
     fs.writeFileSync(f, kept.join('\n'));
   };
   strip('js/main.js', '@web-only');
+  strip('js/shared.js', '@web-only');
 }
 console.log(`built web assets into www/ (${app ? 'app' : 'web'}, ads: ${mode}, version: ${version})`);

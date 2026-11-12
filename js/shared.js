@@ -3,7 +3,8 @@ import * as THREE from 'three';
 import { FALL_Z, FALL_H, WL_SLOPE } from './world.js';
 
 // スマホ（タッチ操作の端末）は軽い設定で描画する
-export const LOW = typeof matchMedia !== 'undefined' && matchMedia('(pointer: coarse)').matches;
+export let LOW = typeof matchMedia !== 'undefined' && matchMedia('(pointer: coarse)').matches;
+if (/[?&]hq=1/.test(location.search)) LOW = false; // @web-only（ストア用の撮影で高画質にする）
 
 export const shared = {
   uTime: { value: 0 },

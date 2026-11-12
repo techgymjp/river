@@ -403,6 +403,7 @@ function startFishing() {
   const tomo = choice.method === 'tomo';
   world.game.start(T.bite, T.clock, tomo);
   showScreen('play');
+  layoutHud();
   world.ui.flash(t(tomo ? 'msg.tomo.start' : 'msg.start', { season: t('season.' + choice.season), time: t('time.' + choice.time) }), tomo ? 5 : 3);
 }
 
@@ -568,6 +569,17 @@ document.querySelectorAll('.chips').forEach((group) => {
 });
 updateTitleTip();
 
+// スマホ横画面の下段：「上流」ボタンの右端から「合わせ」ボタンの左端までに、ゲージと説明パネルを収める
+function layoutHud() {
+  const up = $('btnUp').getBoundingClientRect(), strike = $('btnStrike').getBoundingClientRect();
+  if (!up.width || !strike.width) return; // ボタンが出ていない（PC など）
+  const root = document.documentElement.style;
+  root.setProperty('--hud-left', Math.round(up.right + 12) + 'px');
+  root.setProperty('--hud-right', Math.round(window.innerWidth - strike.left + 12) + 'px');
+}
+onLangChange(() => requestAnimationFrame(layoutHud));
+window.addEventListener('resize', () => requestAnimationFrame(layoutHud));
+
 window.addEventListener('resize', () => {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
@@ -632,6 +644,7 @@ function frame(now) {
 build().then(() => {
   $('loading').classList.remove('show');
   showScreen('title');
+  layoutHud();
   last = performance.now();
   requestAnimationFrame(frame);
 }).catch((err) => {
