@@ -142,6 +142,12 @@ Grab your rod and head for the stream. Can you land a trophy trout?
 
 ---
 
+## リリースノート
+
+`release-notes.txt` の中身を、製品版の「新しいリリースを作成」→「リリースノート」にそのまま貼り付けます（各言語 500 文字以内）。
+
+---
+
 ## Play Console「アプリのコンテンツ」の回答の目安
 
 - **プライバシー ポリシー**: https://techgym.jp/privacy-policy/

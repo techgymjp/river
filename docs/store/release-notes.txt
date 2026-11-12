@@ -1,0 +1,17 @@
+<ja-JP>
+「渓流釣り」をリリースしました！
+3Dで描いた山あいの渓流で、ヤマメ・イワナを目印釣りで、アユを伝統の友釣りで狙う釣りゲームです。
+・目印がピクッと動いた瞬間に合わせる、本格的な渓流釣り
+・ヤマメ、イワナ、ニジマス、アユ、ウグイの5種類と魚図鑑
+・朝マズメ・日中・夕マズメの時間帯と、新緑・盛夏・紅葉の季節
+・琴と尺八の和風BGM、オフラインでも遊べます
+</ja-JP>
+<en-US>
+Trout Stream Fishing 3D is here!
+Cast into a beautiful 3D mountain stream in Japan and catch wild trout.
+• Watch the markers and strike the moment they twitch
+• 5 species — yamame, iwana, rainbow trout, ayu and dace — plus a fish book
+• Try traditional ayu decoy fishing (tomozuri)
+• Dawn, midday and dusk, in spring, summer or autumn
+• Relaxing Japanese music, and you can play offline
+</en-US>
