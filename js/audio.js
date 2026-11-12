@@ -6,7 +6,14 @@ export class AudioSys {
     if (this.ctx) { this.ctx.resume(); return; }
     const AC = window.AudioContext || window.webkitAudioContext;
     if (!AC) return;
-    const ctx = this.ctx = new AC();
+    let ctx;
+    try { ctx = new AC({ latencyHint: 'playback' }); } catch (e) { ctx = new AC(); }
+    this.ctx = ctx;
+    // iOS などで中断された音声を、画面に戻ったとき・触れたときに再開する
+    const resume = () => { if (ctx.state !== 'running') ctx.resume().catch(() => {}); };
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) resume(); });
+    window.addEventListener('pointerdown', resume, { passive: true });
+    window.addEventListener('keydown', resume);
     this.master = ctx.createGain(); this.master.gain.value = 0.8; this.master.connect(ctx.destination);
     const len = ctx.sampleRate * 3;
     this.white = ctx.createBuffer(1, len, ctx.sampleRate);
@@ -46,9 +53,17 @@ export class AudioSys {
   setAmbience(fallDist, riffle) {
     if (!this.ctx) return;
     const t = this.ctx.currentTime;
+    // 毎フレーム呼ばれるので、0.5秒に1回・値が変わった時だけ音量を更新する
+    if (this._ambT && t - this._ambT < 0.5) return;
+    this._ambT = t;
     const fall = Math.max(0, 1 - fallDist / 70);
-    this.fallGain.gain.setTargetAtTime(fall * fall * 0.9, t, 0.5);
-    this.streamGain.gain.setTargetAtTime(0.32 + riffle * 0.25, t, 0.5);
+    const fg = Math.round(fall * fall * 0.9 * 100) / 100, sg = Math.round((0.32 + riffle * 0.25) * 100) / 100;
+    if (fg === this._fg && sg === this._sg) return;
+    this._fg = fg; this._sg = sg;
+    this.fallGain.gain.cancelScheduledValues(t);
+    this.fallGain.gain.setTargetAtTime(fg, t, 0.5);
+    this.streamGain.gain.cancelScheduledValues(t);
+    this.streamGain.gain.setTargetAtTime(sg, t, 0.5);
   }
 
   noiseBurst(dur, type, freq, gain, q = 1, freqEnd = null, buf = null) {
@@ -135,9 +150,12 @@ export class BGM {
     this.out = ctx.createGain();
     this.out.gain.value = this.on ? 0.32 : 0;
     // simple reverb (generated impulse response)
-    const len = ctx.sampleRate * 3;
-    const ir = ctx.createBuffer(2, len, ctx.sampleRate);
-    for (let c = 0; c < 2; c++) {
+    const mobile = matchMedia('(pointer: coarse)').matches;
+    this.mobile = mobile;
+    const len = Math.floor(ctx.sampleRate * (mobile ? 1.4 : 3));
+    const ch = mobile ? 1 : 2;
+    const ir = ctx.createBuffer(ch, len, ctx.sampleRate);
+    for (let c = 0; c < ch; c++) {
       const d = ir.getChannelData(c);
       for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3.2);
     }
@@ -188,7 +206,7 @@ export class BGM {
     g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
     const lp = ctx.createBiquadFilter(); lp.type = 'lowpass';
     lp.frequency.setValueAtTime(f * 9, t); lp.frequency.exponentialRampToValueAtTime(f * 2.2, t + 0.6);
-    const parts = [['triangle', 1, 1], ['sine', 2, 0.35], ['sine', 3.01, 0.12]];
+    const parts = this.mobile ? [['triangle', 1, 1], ['sine', 2, 0.35]] : [['triangle', 1, 1], ['sine', 2, 0.35], ['sine', 3.01, 0.12]];
     for (const [type, mul, amp] of parts) {
       const o = ctx.createOscillator(); o.type = type; o.frequency.setValueAtTime(f * mul, t);
       const og = ctx.createGain(); og.gain.value = amp;
@@ -281,7 +299,7 @@ export class BGM {
     } else {
       len = 4 + Math.random() * 4; // 静寂（川の音だけ）
     }
-    const ms = Math.max(500, (t0 + len - a.ctx.currentTime - 0.3) * 1000);
+    const ms = Math.max(300, (t0 + len - a.ctx.currentTime - 1.0) * 1000); // 1秒前に次を予約（描画が重くても途切れない）
     clearTimeout(this.timer);
     this.timer = setTimeout(() => this.next(Math.max(a.ctx.currentTime + 0.1, t0 + len)), ms);
   }
