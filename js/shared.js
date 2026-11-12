@@ -2,6 +2,9 @@
 import * as THREE from 'three';
 import { FALL_Z, FALL_H, WL_SLOPE } from './world.js';
 
+// スマホ（タッチ操作の端末）は軽い設定で描画する
+export const LOW = typeof matchMedia !== 'undefined' && matchMedia('(pointer: coarse)').matches;
+
 export const shared = {
   uTime: { value: 0 },
   uSunColor: { value: new THREE.Color(1, 1, 1) },
@@ -75,8 +78,9 @@ export function patchMaterial(mat, opts = {}) {
           diffuseColor.rgb *= mix(1.0, 0.62, wet);`)
         .replace('#include <roughnessmap_fragment>', `#include <roughnessmap_fragment>
           roughnessFactor = mix(roughnessFactor, 0.35, max(wet, uwF * 0.5));`)
-        .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
-          {
+        // 川底の光の揺らぎ（コースティクス）。水中の所だけ計算し、スマホでは省く
+        .replace('#include <emissivemap_fragment>', LOW ? '#include <emissivemap_fragment>' : `#include <emissivemap_fragment>
+          if (uwF > 0.001) {
             float ca = causticF(vWPos.xz * 0.33, uTime * 0.55);
             totalEmissiveRadiance += uSunColor * ca * 0.22 * uwF * (1.0 - dF * 0.8) * diffuseColor.rgb;
           }`);

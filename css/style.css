@@ -40,7 +40,7 @@ body.playing #hud { opacity: 1; }
   padding: 10px 14px; display: none; }
 #fightHud.show { display: block; }
 #fightHud .row { display: flex; align-items: center; gap: 10px; font-size: 12px; margin: 4px 0; }
-#fightHud .row span { width: 64px; flex: none; }
+#fightHud .row span { min-width: 64px; flex: none; white-space: nowrap; }
 .bar { position: relative; flex: 1; height: 12px; background: rgba(0, 0, 0, 0.15); border-radius: 6px; overflow: hidden; }
 .bar .fill { position: absolute; left: 0; top: 0; bottom: 0; width: 0; background: #4caf7a; border-radius: 6px; transition: background .15s; }
 .bar .fill[data-zone="warn"] { background: #e3a43a; }
@@ -157,7 +157,9 @@ body.bannerSpace .screen, body.bannerSpace .modal { padding-bottom: 56px; }
   .pause .menu .btn { padding: 6px 10px; }
   #fishPreview { height: 110px; }
   .fishname { font-size: 24px; }
-  #fightHud { bottom: 10px; width: min(52vw, 380px); padding: 6px 10px; }
+  /* ファイトのゲージは画面上部（下の合わせボタン・移動ボタンと重ならない） */
+  #fightHud { bottom: auto; top: 50px; width: min(44vw, 360px); padding: 5px 10px; }
+  #fightHud .row { margin: 2px 0; }
   #mobileControls { bottom: 10px; }
   #mobileControls .strike { width: 78px; height: 78px; font-size: 14px; }
   #message { bottom: auto; top: 12px; max-width: 46vw; }

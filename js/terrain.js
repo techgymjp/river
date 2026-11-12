@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { mergeGeometries, mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
 import * as W from './world.js';
 import { noise2, mulberry32 } from './noise.js';
-import { patchMaterial } from './shared.js';
+import { patchMaterial, LOW } from './shared.js';
 
 const lc = (r, g, b) => new THREE.Color().setRGB(r, g, b, THREE.SRGBColorSpace);
 const arr = (c) => [c.r, c.g, c.b];
@@ -338,6 +338,9 @@ function grassGeometry() {
 }
 
 export function buildVegetation(seasonKey) {
+  // スマホでは木と草を減らし、木の影も描かない（影の計算が一番重いため）
+  const Q = LOW ? 0.55 : 1;
+  const N_CEDAR = Math.round(1300 * Q), N_BROAD = Math.round(800 * Q), N_SHRUB = Math.round(700 * Q), N_GRASS = Math.round(7500 * (LOW ? 0.4 : 1));
   const rng = mulberry32(777);
   const slopeAt = (x, z) => {
     const h = W.terrainHeight;
@@ -348,7 +351,7 @@ export function buildVegetation(seasonKey) {
     return { dd: Math.abs(dx) - hw, bw: W.barWidth(z, left), left };
   };
   const cedars = [], broads = [], shrubs = [], grass = [];
-  for (let i = 0; i < 14000 && (cedars.length < 1300 || broads.length < 800); i++) {
+  for (let i = 0; i < 14000 && (cedars.length < N_CEDAR || broads.length < N_BROAD); i++) {
     const x = (rng() * 2 - 1) * (W.X_HALF - 2), z = W.lerp(W.Z_MIN + 2, W.Z_MAX - 2, rng());
     const { dd, bw, left } = info(x, z);
     if (dd < bw + 1.2) continue;
@@ -356,12 +359,12 @@ export function buildVegetation(seasonKey) {
     const y = W.terrainHeight(x, z);
     const nearRiver = Math.exp(-(dd - bw) / 18);
     if (rng() < 0.55 * nearRiver + 0.12) {
-      if (broads.length < 800) broads.push({ x, y, z, s: 0.75 + rng() * 0.55, lean: dd < bw + 6 ? (left ? 1 : -1) : 0 });
-    } else if (dd > bw + 3 && cedars.length < 1300) {
+      if (broads.length < N_BROAD) broads.push({ x, y, z, s: 0.75 + rng() * 0.55, lean: dd < bw + 6 ? (left ? 1 : -1) : 0 });
+    } else if (dd > bw + 3 && cedars.length < N_CEDAR) {
       cedars.push({ x, y, z, s: 0.65 + rng() * 0.6 });
     }
   }
-  for (let i = 0; i < 4000 && shrubs.length < 700; i++) {
+  for (let i = 0; i < 4000 && shrubs.length < N_SHRUB; i++) {
     const z = W.lerp(W.Z_MIN + 2, W.Z_MAX - 2, rng());
     const left = rng() < 0.5;
     const bw = W.barWidth(z, left);
@@ -369,7 +372,7 @@ export function buildVegetation(seasonKey) {
     const x = W.riverCX(z) + (left ? -1 : 1) * (W.riverHW(z) + dd);
     shrubs.push({ x, y: W.terrainHeight(x, z), z, s: 0.55 + rng() * 0.65 });
   }
-  for (let i = 0; i < 16000 && grass.length < 7500; i++) {
+  for (let i = 0; i < 16000 && grass.length < N_GRASS; i++) {
     const z = W.lerp(W.Z_MIN + 2, W.Z_MAX - 2, rng());
     const left = rng() < 0.5;
     const bw = W.barWidth(z, left);
@@ -404,8 +407,8 @@ export function buildVegetation(seasonKey) {
   const shrubMat = patchMaterial(new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.9 }), { wind: { height: 1.2, amp: 0.06 } });
   const grassMat = patchMaterial(new THREE.MeshStandardMaterial({ map: grassTexture(), alphaTest: 0.45, side: THREE.DoubleSide, roughness: 0.95 }), { wind: { height: 0.6, amp: 0.1 } });
 
-  const cedarIM = makeIM(cedarGeometry(), cedarMat, cedars, { cast: true, tilt: true });
-  const broadIM = makeIM(broadGeometry(), broadMat, broads, { cast: true, tilt: true });
+  const cedarIM = makeIM(cedarGeometry(), cedarMat, cedars, { cast: !LOW, tilt: true });
+  const broadIM = makeIM(broadGeometry(), broadMat, broads, { cast: !LOW, tilt: true });
   const shrubIM = makeIM(shrubGeometry(), shrubMat, shrubs, { cast: false });
   const grassIM = makeIM(grassGeometry(), grassMat, grass, {});
   const rc = mulberry32(31);

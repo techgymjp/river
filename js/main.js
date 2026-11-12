@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import * as W from './world.js';
-import { shared } from './shared.js';
+import { shared, LOW } from './shared.js';
 import { buildTerrain, buildRocks, buildVegetation, SEASONS } from './terrain.js';
 import { buildWater, Effects } from './water.js';
 import { buildSky } from './sky.js';
@@ -39,14 +39,16 @@ const TIMES = {
 
 // ------------------------------------------------------------------ renderer
 const canvas = $('game');
-const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
-const IS_MOBILE = matchMedia('(pointer: coarse)').matches;
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, IS_MOBILE ? 1.5 : 2));
+// スマホ（LOW）はアンチエイリアスなし・解像度は動きに合わせて自動調整（下の adaptResolution）
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: !LOW, powerPreference: 'high-performance' });
+const PR_MAX = Math.min(window.devicePixelRatio, LOW ? 1.5 : 2), PR_MIN = LOW ? 0.65 : 1;
+let pixelRatio = LOW ? Math.min(PR_MAX, 1.1) : PR_MAX;
+renderer.setPixelRatio(pixelRatio);
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.shadowMap.type = LOW ? THREE.PCFShadowMap : THREE.PCFSoftShadowMap;
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 2000);
@@ -56,9 +58,10 @@ const hemi = new THREE.HemisphereLight(0xffffff, 0x444444, 1);
 scene.add(hemi);
 const sun = new THREE.DirectionalLight(0xffffff, 3);
 sun.castShadow = true;
-sun.shadow.mapSize.set(IS_MOBILE ? 1024 : 2048, IS_MOBILE ? 1024 : 2048);
+sun.shadow.mapSize.set(LOW ? 1024 : 2048, LOW ? 1024 : 2048);
 const sc = sun.shadow.camera;
-sc.left = -50; sc.right = 50; sc.top = 50; sc.bottom = -50; sc.near = 1; sc.far = 260;
+const SR = LOW ? 28 : 50; // スマホは影を描く範囲を釣り人の近くに絞る
+sc.left = -SR; sc.right = SR; sc.top = SR; sc.bottom = -SR; sc.near = 1; sc.far = 260;
 sun.shadow.bias = -0.0004;
 sun.shadow.normalBias = 0.03;
 scene.add(sun, sun.target);
@@ -576,9 +579,30 @@ const DT_MAX = 0.05;
 let dtMax = DT_MAX;
 dtMax = parseFloat(new URLSearchParams(location.search).get('dtmax')) || DT_MAX; // @web-only（テスト用）
 let last = performance.now();
+// 描画が重いときは解像度を下げ、余裕があれば上げる（2 秒ごとに平均を見る）
+const perf = { t: 0, n: 0, cool: 2 };
+function adaptResolution(raw) {
+  if (raw > 0.5 || document.hidden) return; // 切り替え直後などの外れ値は無視
+  perf.t += raw; perf.n++;
+  if (perf.t < 2) return;
+  const avg = perf.t / perf.n;
+  perf.t = 0; perf.n = 0;
+  if (perf.cool > 0) { perf.cool--; return; }
+  let next = pixelRatio;
+  if (avg > 1 / 40 && pixelRatio > PR_MIN) next = Math.max(PR_MIN, pixelRatio - 0.15);
+  else if (avg < 1 / 56 && pixelRatio < PR_MAX) next = Math.min(PR_MAX, pixelRatio + 0.1);
+  if (next !== pixelRatio) {
+    pixelRatio = next;
+    renderer.setPixelRatio(pixelRatio);
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    perf.cool = 1;
+  }
+}
 function frame(now) {
-  const dt = Math.min(dtMax, (now - last) / 1000);
+  const raw = (now - last) / 1000;
+  const dt = Math.min(dtMax, raw);
   last = now;
+  adaptResolution(raw);
   shared.uTime.value += dt;
   const { game, effects, aimMesh, sky, audio } = world;
   if (screen !== 'paused') {

@@ -1,7 +1,10 @@
 // Fish species, procedural fish models, and fish behaviour
 import * as THREE from 'three';
 import * as W from './world.js';
-import { patchMaterial } from './shared.js';
+import { patchMaterial, LOW } from './shared.js';
+
+// 釣り人から離れた魚は描かない（1 匹で十数回の描画になるため）
+const VIEW_R = LOW ? 26 : 40;
 import { mulberry32 } from './noise.js';
 
 export const SPECIES = {
@@ -440,6 +443,9 @@ export class FishManager {
       }
       const amp = f.state === 'hooked' ? 0.6 : 0.25 + Math.min(0.4, f.speed * 0.25);
       f.tailPh += dt * (5 + f.speed * 9 + (f.state === 'hooked' ? 10 : 0));
+      const near = f.state === 'hooked' || Math.abs(f.pos.z - ctx.anglerPos.z) < VIEW_R;
+      f.mesh.visible = near;
+      if (!near) continue;
       f.mesh.position.copy(f.pos);
       f.mesh.rotation.set(Math.sin(f.tailPh * 0.5) * 0.05, f.heading + Math.sin(f.tailPh) * 0.06, f.pitch || 0);
       f.mesh.userData.tail.rotation.y = Math.sin(f.tailPh) * amp;

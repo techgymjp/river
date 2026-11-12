@@ -1,7 +1,7 @@
 // River surface (custom shader), waterfall, floating leaves, ripples, splashes, mist
 import * as THREE from 'three';
 import * as W from './world.js';
-import { shared } from './shared.js';
+import { shared, LOW } from './shared.js';
 import { mulberry32 } from './noise.js';
 
 const VERT = /* glsl */`
@@ -53,14 +53,21 @@ float vnoise(vec2 p){
 }
 float fbm(vec2 p){
   float s = 0.0, a = 0.5;
+  #ifdef LOW_Q
+  for (int i = 0; i < 2; i++){ s += a * vnoise(p); p = p * 2.03 + vec2(1.7, 9.2); a *= 0.5; }
+  s *= 1.33;
+  #else
   for (int i = 0; i < 4; i++){ s += a * vnoise(p); p = p * 2.03 + vec2(1.7, 9.2); a *= 0.5; }
+  #endif
   return s;
 }
 float surf(vec2 q, float sp){
   float t = uTime;
   float h = fbm(vec2(q.x * 1.3, q.y * 0.75 - t * sp * 0.9));
   h += 0.5 * fbm(vec2(q.x * 2.9 + 3.1, q.y * 2.1 - t * sp * 1.7));
+  #ifndef LOW_Q
   h += 0.25 * vnoise(vec2(q.x * 7.0, q.y * 6.0 - t * (sp * 2.5 + 0.5)));
+  #endif
   return h;
 }
 void main(){
@@ -104,12 +111,19 @@ void main(){
   float shore = 1.0 - smoothstep(0.0, 0.08, depth);
   float fm = clamp(foamMask + shore * 0.45, 0.0, 1.0);
   float fn = fbm(vec2(q.x * 2.2, q.y * 1.1 - uTime * sp * 1.4));
+  #ifdef LOW_Q
+  float fn2 = vnoise(vec2(q.x * 5.0 + 7.0, q.y * 3.0 - uTime * sp * 2.2)) * 0.9;
+  #else
   float fn2 = fbm(vec2(q.x * 5.0 + 7.0, q.y * 3.0 - uTime * sp * 2.2));
+  #endif
   float fv = fn * 0.75 + fn2 * 0.45;
   float foam = smoothstep(1.02 - fm * 0.75, 1.02 - fm * 0.75 + 0.18, fv) * min(1.0, fm * 1.6);
   // waterfall streaks
-  float streak = fbm(vec2(q.x * 3.5, q.y * 0.35 - uTime * 3.5));
-  float wf = steep * smoothstep(0.3, 0.6, streak + 0.15);
+  float wf = 0.0;
+  if (steep > 0.01) {
+    float streak = fbm(vec2(q.x * 3.5, q.y * 0.35 - uTime * 3.5));
+    wf = steep * smoothstep(0.3, 0.6, streak + 0.15);
+  }
   foam = max(foam, wf);
   foam = max(foam, steep * 0.6);
   vec3 foamCol = (uAmbient * 1.3 + uSunColor * 0.6 * (0.5 + 0.5 * diff));
@@ -192,6 +206,7 @@ export function buildWater(rocks) {
   const mat = new THREE.ShaderMaterial({
     uniforms, vertexShader: VERT, fragmentShader: FRAG,
     transparent: true, fog: true, depthWrite: true, side: THREE.DoubleSide,
+    defines: LOW ? { LOW_Q: 1 } : {},
   });
   const mesh = new THREE.Mesh(geo, mat);
   mesh.renderOrder = 1;

@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { shared } from './shared.js';
+import { shared, LOW } from './shared.js';
 
 export function buildSky() {
   const uniforms = {
@@ -26,7 +26,7 @@ export function buildSky() {
       float hash(vec2 p){ p = fract(p * vec2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x * p.y); }
       float vnoise(vec2 p){ vec2 i = floor(p), f = fract(p); vec2 u = f*f*(3.0-2.0*f);
         return mix(mix(hash(i), hash(i+vec2(1,0)), u.x), mix(hash(i+vec2(0,1)), hash(i+vec2(1,1)), u.x), u.y); }
-      float fbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<5;i++){ s+=a*vnoise(p); p=p*2.02+vec2(3.1,1.7); a*=0.5; } return s; }
+      float fbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<${LOW ? 3 : 5};i++){ s+=a*vnoise(p); p=p*2.02+vec2(3.1,1.7); a*=0.5; } return s; }
       void main(){
         vec3 d = normalize(vDir);
         float h = clamp(d.y, 0.0, 1.0);
