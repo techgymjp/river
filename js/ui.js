@@ -90,7 +90,7 @@ export class UI {
     this.msgTimer = setTimeout(() => { this._busy = false; this.msg.textContent = this.baseMsg || ''; this.msg.classList.toggle('show', !!this.baseMsg); }, dur * 1000);
   }
   bite(on, key = 'bite') { if (on) this.biteEl.textContent = t(key); this.biteEl.classList.toggle('show', on); }
-  fight(on) { this.fightEl.classList.toggle('show', on); }
+  fight(on) { this.fightEl.classList.toggle('show', on); document.body.classList.toggle('fighting', on); }
   decoy(on, vigor = 1) {
     $('decoyHud').classList.toggle('show', on);
     $('vigorFill').style.width = (Math.max(0, vigor) * 100).toFixed(1) + '%';
