@@ -12,7 +12,7 @@ const UNITS = {
     production: {
       interstitial: '',
       rewarded: '',
-      banner: '',
+      banner: 'ca-app-pub-6411535997477460/1500445505',
     },
   },
 };

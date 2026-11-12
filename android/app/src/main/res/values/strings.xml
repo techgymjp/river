@@ -4,6 +4,6 @@
     <string name="title_activity_main">渓流釣り</string>
     <string name="package_name">jp.techgym.river</string>
     <string name="custom_url_scheme">jp.techgym.river</string>
-    <!-- AdMob のアプリ ID。本番の ID が届くまでは Google 公式のテスト用アプリ ID -->
-    <string name="admob_app_id" translatable="false">ca-app-pub-3940256099942544~3347511713</string>
+    <!-- AdMob のアプリ ID（Android アプリ「渓流釣り」） -->
+    <string name="admob_app_id" translatable="false">ca-app-pub-6411535997477460~8065853858</string>
 </resources>
