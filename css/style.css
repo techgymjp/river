@@ -175,6 +175,10 @@ body.bannerSpace .screen, body.bannerSpace .modal { padding-bottom: 56px; }
   #btnDown { order: 3; }
   #fightHud { top: auto; bottom: 10px; left: 107px; transform: none; width: min(calc(100vw - 320px), 380px); padding: 6px 10px; }
   #fightHud .row { margin: 3px 0; }
+  /* 説明パネルは画面最下部（「上流」ボタンの右）。画面の上は景色のために空ける */
+  #message { top: auto; bottom: 10px; left: 107px; transform: none; width: min(calc(100vw - 320px), 380px);
+    max-width: none; text-align: center; padding: 7px 12px; line-height: 1.35; }
+  #decoyHud { top: 84px; }
   /* ファイト中は案内をゲージの真上に、ゲージと同じ幅で 1 行に */
   body.fighting #message { top: auto; bottom: 73px; left: 107px; transform: none; width: min(calc(100vw - 320px), 380px);
     max-width: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 6px 12px; }
