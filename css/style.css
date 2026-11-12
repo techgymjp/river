@@ -95,3 +95,24 @@ body.playing #hud { opacity: 1; }
 .card ul { padding-left: 18px; font-size: 13px; }
 .card .hi { font-size: 14px; }
 .help ol { padding-left: 20px; font-size: 14px; line-height: 1.6; }
+#decoyHud { position: absolute; top: 74px; left: 12px; width: 230px; padding: 6px 12px; display: none; }
+#decoyHud.show { display: block; }
+#decoyHud .row { display: flex; align-items: center; gap: 8px; font-size: 12px; }
+#decoyHud .row span { flex: none; }
+.bar .fill.vigor { background: #d9b83a; }
+#topRight { flex-wrap: wrap; justify-content: flex-end; max-width: calc(100vw - 220px); }
+.chips button.disabled { opacity: .35; pointer-events: none; }
+.linkbtn { font: inherit; background: none; border: 0; color: var(--accent); text-decoration: underline; cursor: pointer; padding: 0; }
+.help h3 { font-size: 15px; margin: 12px 0 4px; }
+.zukan { width: min(94vw, 760px); }
+#zukanBody { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; margin: 10px 0 14px; }
+.zcard { background: #faf7ef; border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; font-size: 12px; }
+.zcard .zimg { background: radial-gradient(ellipse, #fff, #e6e1d2); border-radius: 6px; }
+.zcard img { width: 100%; height: 90px; object-fit: contain; display: block; }
+.zcard.unknown img { filter: brightness(0) opacity(0.45); }
+.zcard .zn { font-family: 'Noto Serif JP', serif; font-weight: 900; font-size: 18px; margin: 4px 0 2px; }
+.zcard .zd { color: #4a524c; margin: 2px 0 6px; line-height: 1.45; }
+.zcard table { margin: 0; font-size: 12px; }
+.zcard td { padding: 2px 4px; }
+@media (max-width: 600px) { #topRight .btn { font-size: 12px; padding: 6px 8px; } }
+@media (max-height: 620px) { .logo.big { font-size: 40px; } .opt { margin: 6px 0; } #btnStart { margin-top: 6px; } .card { padding: 16px 22px; } }

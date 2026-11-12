@@ -152,6 +152,7 @@ export class FishingLine {
     this.bait.position.copy(bait);
     this.sinker.position.lerpVectors(bait, this.pts[N - 4], 0.6);
   }
+  setBaitVisible(v) { this.baitVisible = v; this.bait.visible = v; this.sinker.visible = v; }
   setVisible(v) {
     this.line.visible = v; this.bait.visible = v; this.sinker.visible = v;
     if (!v) this.marks.forEach((m) => (m.visible = false));

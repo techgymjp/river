@@ -23,100 +23,110 @@
 
 <div id="hud">
   <div id="topLeft" class="panel">
-    <div class="logo">渓流釣り</div>
-    <div class="stats"><span id="timeLabel">--:--</span>　釣果 <b id="catchCount">0</b> 尾　<b id="score">0</b> pt</div>
+    <div class="logo" data-i18n="title">渓流釣り</div>
+    <div class="stats"><span id="timeLabel">--:--</span>　<span data-i18n="hud.catch">釣果</span> <b id="catchCount">0</b> <span data-i18n="hud.unit">尾</span>　<b id="score">0</b> pt</div>
   </div>
   <div id="topRight">
-    <button id="btnLog" class="btn">釣果記録</button>
+    <button id="btnZukan" class="btn" data-i18n="btn.zukan">図鑑</button>
+    <button id="btnLog" class="btn" data-i18n="btn.log">釣果記録</button>
     <button id="btnBgm" class="btn">BGM ON</button>
     <button id="btnSound" class="btn">音 ON</button>
-    <button id="btnHelp" class="btn">操作</button>
+    <button id="btnHelp" class="btn" data-i18n="btn.help">操作</button>
+    <button id="btnLang" class="btn" data-i18n="btn.lang">English</button>
   </div>
   <div id="message"></div>
-  <div id="biteAlert">アタリ！</div>
+  <div id="biteAlert" data-i18n="bite">アタリ！</div>
+  <div id="decoyHud" class="panel">
+    <div class="row"><span data-i18n="hud.vigor">おとりの元気</span><div class="bar"><div id="vigorFill" class="fill vigor"></div></div></div>
+  </div>
   <div id="fightHud" class="panel">
-    <div class="row"><span>テンション</span><div class="bar tension"><div class="zone"></div><div id="tensionFill" class="fill"></div></div></div>
-    <div class="row"><span>魚の体力</span><div class="bar"><div id="staminaFill" class="fill stamina"></div></div></div>
+    <div class="row"><span data-i18n="hud.tension">テンション</span><div class="bar tension"><div class="zone"></div><div id="tensionFill" class="fill"></div></div></div>
+    <div class="row"><span data-i18n="hud.stamina">魚の体力</span><div class="bar"><div id="staminaFill" class="fill stamina"></div></div></div>
   </div>
   <div id="mobileControls">
-    <button id="btnUp" class="btn round">◀ 上流</button>
-    <button id="btnStrike" class="btn round strike">合わせ<br><small>長押しで寄せ</small></button>
-    <button id="btnDown" class="btn round">下流 ▶</button>
+    <button id="btnUp" class="btn round" data-i18n="btn.up">◀ 上流</button>
+    <button id="btnStrike" class="btn round strike"><span id="strikeLabel" data-i18n="btn.strike">合わせ</span><br><small data-i18n="btn.strike.sub">長押しで寄せ</small></button>
+    <button id="btnDown" class="btn round" data-i18n="btn.down">下流 ▶</button>
   </div>
 </div>
 
 <div id="loading" class="screen show">
-  <div class="logo big">渓流釣り</div>
-  <div id="loadingText">読み込み中…</div>
+  <div class="logo big" data-i18n="title">渓流釣り</div>
+  <div id="loadingText" data-i18n="load.init">読み込み中…</div>
 </div>
 
 <div id="titleScreen" class="screen">
   <div class="card">
-    <div class="logo big">渓流釣り</div>
-    <p class="sub">山あいの清流で、ヤマメ・イワナを目印釣りで狙う。</p>
+    <div class="logo big" data-i18n="title">渓流釣り</div>
+    <p class="sub" data-i18n="title.sub"></p>
     <div class="opt">
-      <div class="label">時間帯</div>
+      <div class="label" data-i18n="opt.method">釣り方</div>
+      <div class="chips" data-key="method">
+        <button data-val="bait" class="on" data-i18n="method.bait">エサ釣り</button>
+        <button data-val="tomo" data-i18n="method.tomo">友釣り（アユ）</button>
+      </div>
+    </div>
+    <div class="opt">
+      <div class="label" data-i18n="opt.time">時間帯</div>
       <div class="chips" data-key="time">
-        <button data-val="morning" class="on">朝マズメ</button>
-        <button data-val="noon">日中</button>
-        <button data-val="evening">夕マズメ</button>
+        <button data-val="morning" class="on" data-i18n="time.morning">朝マズメ</button>
+        <button data-val="noon" data-i18n="time.noon">日中</button>
+        <button data-val="evening" data-i18n="time.evening">夕マズメ</button>
       </div>
     </div>
     <div class="opt">
-      <div class="label">季節</div>
+      <div class="label" data-i18n="opt.season">季節</div>
       <div class="chips" data-key="season">
-        <button data-val="spring">新緑</button>
-        <button data-val="summer">盛夏</button>
-        <button data-val="autumn" class="on">紅葉</button>
+        <button data-val="spring" data-i18n="season.spring">新緑</button>
+        <button data-val="summer" data-i18n="season.summer">盛夏</button>
+        <button data-val="autumn" class="on" data-i18n="season.autumn">紅葉</button>
       </div>
     </div>
-    <button id="btnStart" class="btn primary">釣りを始める</button>
-    <p class="tiny">マズメ時は魚の活性が高く、アタリが多くなります。</p>
+    <button id="btnStart" class="btn primary" data-i18n="start">釣りを始める</button>
+    <p class="tiny" id="titleTip" data-i18n="title.tip"></p>
+    <p class="tiny"><button id="btnLang2" class="linkbtn" data-i18n="btn.lang">English</button></p>
   </div>
 </div>
 
 <div id="resultModal" class="modal">
   <div class="card result">
-    <div class="caught">釣り上げた！</div>
+    <div class="caught" data-i18n="res.caught">釣り上げた！</div>
     <canvas id="fishPreview"></canvas>
     <div class="fishname" id="resName"></div>
     <div id="resBadges"></div>
     <div class="nums"><span id="resSize"></span><span id="resWeight"></span><span id="resPts"></span></div>
     <p id="resDesc"></p>
     <div class="buttons">
-      <button id="btnRelease" class="btn primary">リリース <small>+10%</small></button>
-      <button id="btnKeep" class="btn">キープ</button>
+      <button id="btnRelease" class="btn primary"><span data-i18n="res.release">リリース</span> <small>+10%</small></button>
+      <button id="btnKeep" class="btn" data-i18n="res.keep">キープ</button>
     </div>
   </div>
 </div>
 
 <div id="logModal" class="modal closable">
   <div class="card">
-    <h2>釣果記録</h2>
+    <h2 data-i18n="log.title">釣果記録</h2>
     <div id="logBody"></div>
-    <button class="btn" data-close>閉じる</button>
+    <button class="btn" data-close data-i18n="btn.close">閉じる</button>
+  </div>
+</div>
+
+<div id="zukanModal" class="modal closable">
+  <div class="card zukan">
+    <h2 data-i18n="zukan.title">魚図鑑</h2>
+    <div id="zukanProgress" class="tiny"></div>
+    <div id="zukanBody"></div>
+    <button class="btn" data-close data-i18n="btn.close">閉じる</button>
   </div>
 </div>
 
 <div id="helpModal" class="modal closable">
   <div class="card help">
-    <h2>遊び方</h2>
-    <ol>
-      <li><b>振り込み</b>：水面にカーソルを合わせ（緑の輪）クリック／タップ。</li>
-      <li><b>流し</b>：仕掛けは流れに乗って下ります。岩の裏や淵（深くて緑の濃い所）に魚が潜んでいます。</li>
-      <li><b>合わせ</b>：目印がピクッと動いたら（アタリ！）すかさず クリック／スペース。ヤマメのアタリは一瞬、イワナは少し長めです。</li>
-      <li><b>やり取り</b>：押し続けると竿を立てて寄せ、離すと魚の引きをいなします。テンションが赤（強すぎ）だと糸切れ、低すぎるとバラシ。</li>
-      <li><b>取り込み</b>：魚の体力を削って手前まで寄せると自動でタモ入れ。</li>
-    </ol>
-    <table>
-      <tr><td>A / ←</td><td>上流へ移動</td></tr>
-      <tr><td>D / →</td><td>下流へ移動</td></tr>
-      <tr><td>右ドラッグ / Q・E</td><td>視点の回転</td></tr>
-      <tr><td>ホイール / ピンチ</td><td>ズーム</td></tr>
-      <tr><td>スペース</td><td>合わせ / 長押しで寄せ</td></tr>
-    </table>
-    <p class="tiny">魚は人の気配や着水音に敏感です。歩いて近づきすぎると逃げてしまいます。上流には滝と滝壺があります。</p>
-    <button class="btn" data-close>閉じる</button>
+    <h2 data-i18n="help.title">遊び方</h2>
+    <div data-i18n-html="help.body"></div>
+    <table data-i18n-html="help.keys"></table>
+    <p class="tiny" data-i18n="help.tip"></p>
+    <button class="btn" data-close data-i18n="btn.close">閉じる</button>
   </div>
 </div>
 

@@ -9,6 +9,10 @@ import { FishManager } from './fish.js';
 import { Game } from './game.js';
 import { AudioSys, BGM } from './audio.js';
 import { UI } from './ui.js';
+import { createFishMesh } from './fish.js';
+import { t, setLang, getLang, applyStatic, onLangChange } from './i18n.js';
+
+applyStatic();
 
 const $ = (id) => document.getElementById(id);
 const lc = (a) => new THREE.Color().setRGB(a[0], a[1], a[2], THREE.SRGBColorSpace);
@@ -63,22 +67,22 @@ let world;
 
 async function build() {
   const season = 'autumn';
-  setLoading('地形を生成中…'); await nextFrame();
+  setLoading(t('load.terrain')); await nextFrame();
   const terrain = buildTerrain(season);
   scene.add(terrain.mesh);
-  setLoading('岩を配置中…'); await nextFrame();
+  setLoading(t('load.rocks')); await nextFrame();
   const rocks = buildRocks();
   rocks.meshes.forEach((m) => scene.add(m));
-  setLoading('森を育てています…'); await nextFrame();
+  setLoading(t('load.forest')); await nextFrame();
   const veg = buildVegetation(season);
   veg.meshes.forEach((m) => scene.add(m));
-  setLoading('川を流しています…'); await nextFrame();
+  setLoading(t('load.river')); await nextFrame();
   const water = buildWater(rocks.list);
   scene.add(water.mesh);
   const sky = buildSky();
   scene.add(sky.mesh);
   const effects = new Effects(scene);
-  setLoading('魚を放流中…'); await nextFrame();
+  setLoading(t('load.fish')); await nextFrame();
   const fishMgr = new FishManager(scene, rocks.list);
   const angler = new Angler();
   angler.addTo(scene);
@@ -87,13 +91,18 @@ async function build() {
   const audio = new AudioSys();
   const bgm = new BGM(audio);
   const game = new Game({ angler, line, fishMgr, effects, ui, audio });
+  // 友釣りのおとり（養殖アユ）
+  game.decoyMesh = createFishMesh('ayu', true);
+  game.decoyMesh.scale.setScalar(0.2);
+  game.decoyMesh.visible = false;
+  scene.add(game.decoyMesh);
   // aim marker
   const aimMesh = new THREE.Mesh(new THREE.RingGeometry(0.22, 0.3, 32).rotateX(-Math.PI / 2),
     new THREE.MeshBasicMaterial({ color: 0x7dffb0, transparent: true, opacity: 0.85, depthWrite: false }));
   aimMesh.renderOrder = 5;
   scene.add(aimMesh);
   world = { terrain, rocks, veg, water, sky, effects, fishMgr, angler, line, ui, audio, bgm, game, aimMesh };
-  $('btnBgm').textContent = bgm.on ? 'BGM ON' : 'BGM OFF';
+  refreshButtons();
   applyPreset('morning', season);
   window.__keiryu = world;
 }
@@ -266,28 +275,56 @@ holdButton('btnStrike', () => {
 $('btnSound').addEventListener('click', () => {
   const a = world.audio;
   a.setEnabled(!a.enabled);
-  $('btnSound').textContent = a.enabled ? '音 ON' : '音 OFF';
+  refreshButtons();
 });
 $('btnBgm').addEventListener('click', () => {
   const b = world.bgm;
   b.setOn(!b.on);
-  $('btnBgm').textContent = b.on ? 'BGM ON' : 'BGM OFF';
+  refreshButtons();
 });
+function refreshButtons() {
+  if (!world) return;
+  $('btnSound').textContent = t(world.audio.enabled ? 'btn.sound.on' : 'btn.sound.off');
+  $('btnBgm').textContent = t(world.bgm.on ? 'btn.bgm.on' : 'btn.bgm.off');
+}
+const toggleLang = () => setLang(getLang() === 'ja' ? 'en' : 'ja');
+$('btnLang').addEventListener('click', toggleLang);
+$('btnLang2').addEventListener('click', toggleLang);
+onLangChange(() => {
+  refreshButtons();
+  updateTitleTip();
+  if (world) { world.game.refreshHint(); world.ui.setStrikeMode(world.game.tomo); }
+});
+$('btnZukan').addEventListener('click', () => world.ui.showZukan(world.game.records));
 $('btnLog').addEventListener('click', () => world.ui.showLog(world.game.catches, world.game.records));
 $('btnHelp').addEventListener('click', () => $('helpModal').classList.add('show'));
 document.querySelectorAll('[data-close]').forEach((b) => b.addEventListener('click', () => b.closest('.modal').classList.remove('show')));
 
 // option chips on the title screen
-const choice = { time: 'morning', season: 'autumn' };
+const choice = { method: 'bait', time: 'morning', season: 'autumn' };
+function selectChip(key, val) {
+  choice[key] = val;
+  document.querySelectorAll(`.chips[data-key="${key}"] button`).forEach((x) => x.classList.toggle('on', x.dataset.val === val));
+}
+function updateTitleTip() {
+  $('titleTip').textContent = t(choice.method === 'tomo' ? 'title.tomoNote' : 'title.tip');
+}
 document.querySelectorAll('.chips').forEach((group) => {
   group.addEventListener('click', (e) => {
     const b = e.target.closest('button');
-    if (!b) return;
-    group.querySelectorAll('button').forEach((x) => x.classList.toggle('on', x === b));
-    choice[group.dataset.key] = b.dataset.val;
+    if (!b || b.classList.contains('disabled')) return;
+    selectChip(group.dataset.key, b.dataset.val);
+    if (group.dataset.key === 'method') {
+      // 友釣りはアユの季節（新緑・盛夏）のみ
+      const autumn = document.querySelector('.chips[data-key="season"] [data-val="autumn"]');
+      autumn.classList.toggle('disabled', choice.method === 'tomo');
+      if (choice.method === 'tomo' && choice.season === 'autumn') selectChip('season', 'summer');
+      updateTitleTip();
+    }
     if (world) applyPreset(choice.time, choice.season);
   });
 });
+updateTitleTip();
 $('btnStart').addEventListener('click', () => {
   if (!world) return;
   world.audio.init();
@@ -296,8 +333,9 @@ $('btnStart').addEventListener('click', () => {
   $('titleScreen').classList.remove('show');
   document.body.classList.add('playing');
   const T = TIMES[choice.time];
-  world.game.start(T.bite, T.clock);
-  world.ui.flash(`${SEASONS[choice.season].label}の渓流・${T.label}。良い釣りを！`, 3);
+  const tomo = choice.method === 'tomo';
+  world.game.start(T.bite, T.clock, tomo);
+  world.ui.flash(t(tomo ? 'msg.tomo.start' : 'msg.start', { season: t('season.' + choice.season), time: t('time.' + choice.time) }), tomo ? 5 : 3);
 });
 
 window.addEventListener('resize', () => {
@@ -342,5 +380,5 @@ build().then(() => {
   requestAnimationFrame(frame);
 }).catch((err) => {
   console.error(err);
-  setLoading('読み込みに失敗しました: ' + err.message);
+  setLoading(t('load.fail', { msg: err.message }));
 });

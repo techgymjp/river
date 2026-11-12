@@ -17,6 +17,10 @@ export const SPECIES = {
     name: 'ニジマス', min: 22, max: 52, exp: 1.7, biteRate: 1.5, window: 0.6, power: 1.35, jumpy: 0.5, points: 1.2, interest: 0.6,
     fin: 0x6d7060, desc: '強烈な引きとジャンプ。体側の虹色の帯が特徴。',
   },
+  ayu: {
+    name: 'アユ', min: 15, max: 28, exp: 1.6, biteRate: 0, window: 0, power: 1.15, jumpy: 0.15, points: 2.0, interest: 0,
+    fin: 0xb59a48, tomo: true, desc: '清流の女王・香魚。瀬の苔を食み、縄張りに入ったおとりに体当たりする。友釣りでしか釣れない。',
+  },
   ugui: {
     name: 'ウグイ', min: 12, max: 28, exp: 1.3, biteRate: 2.3, window: 0.55, power: 0.6, jumpy: 0.0, points: 0.5, interest: 0.8,
     fin: 0x8a8070, desc: '渓流の外道の代表格。よくエサをつつく。',
@@ -72,6 +76,13 @@ function speciesColor(key, along, dn, phi) {
     const band = sm(0.24, 0.0, Math.abs(dn + 0.02));
     c = mix(c, [0.88, 0.42, 0.48], band * 0.7);
     if (dn > -0.35) c = mix(c, [0.06, 0.06, 0.06], spots(along, phi, 34, 52, 0.17, 5, 0.75) * sm(-0.35, -0.1, dn));
+  } else if (key === 'ayu') {
+    c = mix([0.82, 0.8, 0.66], [0.4, 0.42, 0.32], top);
+    c = mix(c, [0.96, 0.95, 0.9], bot);
+    // 追星（えらの後ろの黄色い斑紋）
+    const e = ((along - 0.45) / 0.09) ** 2 + ((dn - 0.18) / 0.22) ** 2;
+    if (e < 1.3) c = mix(c, [0.98, 0.82, 0.2], (1 - sm(0.5, 1.3, e)) * 0.9);
+    c = mix(c, [0.9, 0.85, 0.55], sm(0.18, 0.0, Math.abs(dn + 0.05)) * 0.25);
   } else {
     c = mix([0.8, 0.82, 0.8], [0.3, 0.32, 0.27], top);
     c = mix(c, [0.96, 0.96, 0.95], bot);
@@ -165,6 +176,7 @@ export function createFishMesh(key, underwater = true) {
   const F = fins();
   const g = new THREE.Group();
   const body = new THREE.Mesh(bodyGeometry(), m.body);
+  if (key === 'ayu') body.scale.set(1, 0.84, 0.9); // スリムな体形
   g.add(body);
   const tail = new THREE.Group(); tail.position.set(-0.47, 0, 0); g.add(tail);
   tail.add(new THREE.Mesh(F.tail, m.fin));
@@ -189,13 +201,29 @@ const dampAngle = (a, b, k) => {
 };
 
 export class FishManager {
-  constructor(scene, rocks, count = 46) {
+  constructor(scene, rocks, count = 46, ayuCount = 34) {
     this.scene = scene;
     this.rocks = rocks.filter((r) => r.inRiver);
     this.rng = mulberry32(4242);
     this.list = [];
     this.t = 0;
     for (let i = 0; i < count; i++) this.list.push(this.spawn());
+    for (let i = 0; i < ayuCount; i++) this.list.push(this.spawn(true));
+  }
+
+  // 鮎は瀬（浅く流れの速い所）に縄張りを持つ
+  pickAyuSpot() {
+    const r = this.rng;
+    for (let tries = 0; tries < 120; tries++) {
+      const z = W.lerp(W.FALL_Z + 15, W.WALK_MAX + 14, r());
+      if (W.poolFactor(z) > 0.55) continue;
+      const cx = W.riverCX(z), hw = W.riverHW(z);
+      const x = cx + (r() * 2 - 1) * hw * 0.75;
+      const depth = W.waterLevel(z) - W.terrainHeight(x, z);
+      if (depth < 0.22 || depth > 1.0) continue;
+      return { x, z, depth };
+    }
+    return this.pickSpot();
   }
 
   pickSpot() {
@@ -229,9 +257,9 @@ export class FishManager {
     return 'yamame';
   }
 
-  spawn() {
-    const spot = this.pickSpot();
-    const key = this.chooseSpecies(spot.z);
+  spawn(isAyu = false) {
+    const spot = isAyu ? this.pickAyuSpot() : this.pickSpot();
+    const key = isAyu ? 'ayu' : this.chooseSpecies(spot.z);
     const sp = SPECIES[key];
     const size = Math.round((sp.min + (sp.max - sp.min) * Math.pow(this.rng(), sp.exp)) * 10) / 10;
     const mesh = createFishMesh(key, true);
@@ -245,7 +273,10 @@ export class FishManager {
       pos: new THREE.Vector3(spot.x, homeY, spot.z),
       heading: 0, state: 'hold', timer: 0, cool: 0, ph: this.rng() * 100, tailPh: this.rng() * 6, speed: 0,
       flee: new THREE.Vector3(), natLow: 0,
+      isAyu, terrR: 1.0 + this.rng() * 0.7, aggr: 0.5 + this.rng() * 0.5,
     };
+    if (isAyu) f.home.y = Math.max(bed + 0.06, wl - Math.min(spot.depth * 0.6, 0.35));
+    if (isAyu) f.pos.y = f.home.y;
     const fd = W.flowDir(spot.z);
     f.heading = Math.atan2(fd.z, -fd.x);
     return f;
@@ -253,7 +284,7 @@ export class FishManager {
 
   respawn(f) {
     this.scene.remove(f.mesh);
-    const nf = this.spawn();
+    const nf = this.spawn(f.isAyu);
     Object.assign(f, nf);
   }
 
@@ -307,7 +338,7 @@ export class FishManager {
     if (f.state !== 'hooked') f.pos.y = W.clamp(f.pos.y, bed + 0.06, wl - 0.07);
   }
 
-  /** ctx: {bait, baitActive, anglerPos, anglerMoving, timeMul} -> fish that bites, or null */
+  /** ctx: {bait, baitActive, tomo, anglerPos, anglerMoving, timeMul} -> fish that bites (or hits the decoy), or null */
   update(dt, ctx) {
     this.t += dt;
     let biter = null;
@@ -325,11 +356,24 @@ export class FishManager {
       const sense = 2.3 * (0.75 + 0.25 * ctx.timeMul);
       switch (f.state) {
         case 'hold': {
+          if (f.isAyu) {
+            // 縄張りの中を苔を食みながら動き回る
+            const tx = f.home.x + Math.sin(this.t * 0.7 + f.ph) * f.terrR * 0.5;
+            const tz = f.home.z + Math.cos(this.t * 0.53 + f.ph * 1.3) * f.terrR * 0.6;
+            this._move(f, tx, f.home.y, tz, 0.55, dt);
+            f.moveHeading = null;
+            if (ctx.tomo && ctx.baitActive && f.cool <= 0) {
+              const d = Math.hypot(bait.pos.x - f.home.x, bait.pos.z - f.home.z);
+              if (d < f.terrR + 0.4 && this.rng() < f.aggr * ctx.timeMul * (0.3 + 0.7 * bait.vigor) * dt * 3) { f.state = 'attack'; f.timer = 0; }
+            }
+            if (ctx.anglerMoving && Math.hypot(ctx.anglerPos.x - f.pos.x, ctx.anglerPos.z - f.pos.z) < 2.5) this.startFlee(f, ctx.anglerPos);
+            break;
+          }
           const tx = f.home.x + Math.sin(this.t * 0.3 + f.ph) * 0.25;
           const tz = f.home.z + Math.cos(this.t * 0.23 + f.ph) * 0.35;
           this._move(f, tx, f.home.y, tz, 0.3, dt);
           f.moveHeading = null;
-          if (ctx.baitActive && f.cool <= 0 && bait.natural > 0.4) {
+          if (ctx.baitActive && !ctx.tomo && f.cool <= 0 && bait.natural > 0.4) {
             const d = Math.hypot(bait.pos.x - f.pos.x, bait.pos.z - f.pos.z);
             if (d < sense) {
               if (this.rng() < sp.interest * Math.min(1.3, ctx.timeMul)) { f.state = 'approach'; f.natLow = 0; }
@@ -368,6 +412,19 @@ export class FishManager {
         case 'return': {
           const d = this._move(f, f.home.x, f.home.y, f.home.z, 0.6, dt);
           if (d < 0.2) f.state = 'hold';
+          break;
+        }
+        case 'attack': {
+          // おとりへ体当たり。掛け針に触れれば掛かる
+          if (!ctx.tomo || !ctx.baitActive) { f.state = 'hold'; break; }
+          f.timer += dt;
+          const d = this._move(f, bait.pos.x, bait.pos.y, bait.pos.z, 2.8, dt);
+          if (d < 0.18 && !biter) {
+            if (this.rng() < 0.45 + 0.4 * bait.vigor) { f.state = 'bite'; biter = f; }
+            else { f.state = 'hold'; f.cool = 1.5 + this.rng() * 2; }
+          } else if (f.timer > 2.5 || Math.hypot(bait.pos.x - f.home.x, bait.pos.z - f.home.z) > f.terrR + 1.2) {
+            f.state = 'hold'; f.cool = 2;
+          }
           break;
         }
         case 'bite': {
