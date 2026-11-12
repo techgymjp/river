@@ -252,7 +252,7 @@ export class Angler {
     // legs
     const walk = st.walking ? 1 : 0;
     this.walkAmt = THREE.MathUtils.damp(this.walkAmt ?? 0, walk, 8, dt);
-    this.walkPhase += dt * 7.5 * this.walkAmt;
+    this.walkPhase += dt * 7.5 * this.walkAmt * (st.walkRate ?? 1);
     const wa = this.walkAmt;
     for (const L of this.legs) {
       const ph = this.walkPhase + (L.s > 0 ? Math.PI : 0);

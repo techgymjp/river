@@ -366,7 +366,7 @@ export class FishManager {
               const d = Math.hypot(bait.pos.x - f.home.x, bait.pos.z - f.home.z);
               if (d < f.terrR + 0.4 && this.rng() < f.aggr * ctx.timeMul * (0.3 + 0.7 * bait.vigor) * dt * 3) { f.state = 'attack'; f.timer = 0; }
             }
-            if (ctx.anglerMoving && Math.hypot(ctx.anglerPos.x - f.pos.x, ctx.anglerPos.z - f.pos.z) < 2.5) this.startFlee(f, ctx.anglerPos);
+            if (ctx.anglerMoving && Math.hypot(ctx.anglerPos.x - f.pos.x, ctx.anglerPos.z - f.pos.z) < 2.5 * (ctx.anglerCareful ? 0.75 : 1)) this.startFlee(f, ctx.anglerPos);
             break;
           }
           const tx = f.home.x + Math.sin(this.t * 0.3 + f.ph) * 0.25;
@@ -380,7 +380,7 @@ export class FishManager {
               else f.cool = 7;
             }
           }
-          if (ctx.anglerMoving && Math.hypot(ctx.anglerPos.x - f.pos.x, ctx.anglerPos.z - f.pos.z) < 3.2) this.startFlee(f, ctx.anglerPos);
+          if (ctx.anglerMoving && Math.hypot(ctx.anglerPos.x - f.pos.x, ctx.anglerPos.z - f.pos.z) < 3.2 * (ctx.anglerCareful ? 0.75 : 1)) this.startFlee(f, ctx.anglerPos);
           break;
         }
         case 'approach': {

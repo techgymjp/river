@@ -178,9 +178,11 @@ export class Game {
 
     // walking along the bank
     this.walking = false;
+    // 流している間も歩ける（仕掛けは回収しない）。目印を追うときは、音を立てないようゆっくり歩く
+    this.careful = st === 'drift';
     if (this.walkDir !== 0 && (st === 'idle' || st === 'drift')) {
-      if (st === 'drift') this.retrieve();
-      const nz = W.clamp(this.anglerZ + this.walkDir * 1.5 * dt, W.WALK_MIN, W.WALK_MAX);
+      const speed = this.careful ? 0.75 : 1.5;
+      const nz = W.clamp(this.anglerZ + this.walkDir * speed * dt, W.WALK_MIN, W.WALK_MAX);
       if (nz !== this.anglerZ) { this.anglerZ = nz; this.walking = true; }
     }
     this.updateAnglerPos();
@@ -197,9 +199,10 @@ export class Game {
     let wantYaw = this.rodYaw - 0.12;
     if (this.walking) {
       const f = W.flowDir(this.anglerZ);
-      wantYaw = Math.atan2(f.x * this.walkDir, f.z * this.walkDir);
+      // 流している間は、仕掛けの方を向いたまま横歩きで追う
+      if (!this.careful) wantYaw = Math.atan2(f.x * this.walkDir, f.z * this.walkDir);
       this.stepT += dt;
-      if (this.stepT > 0.4) { this.stepT = 0; this.audio.step(); }
+      if (this.stepT > (this.careful ? 0.75 : 0.4)) { this.stepT = 0; this.audio.step(); }
     }
     this.bodyYaw = dampAngle(this.bodyYaw, wantYaw, dt * 4);
 
@@ -207,7 +210,7 @@ export class Game {
     this.bait.vigor = this.decoyVigor;
     const bite = this.fishMgr.update(dt, {
       bait: this.bait, baitActive: this.state === 'drift', tomo: this.tomo,
-      anglerPos: this.pos, anglerMoving: this.walking, timeMul: this.timeMul,
+      anglerPos: this.pos, anglerMoving: this.walking, anglerCareful: this.careful, timeMul: this.timeMul,
     });
     if (bite && this.state === 'drift') { if (this.tomo) this.onAttackHit(bite); else this.onBite(bite); }
     else if (bite) bite.state = 'hold';
@@ -222,7 +225,7 @@ export class Game {
     const look = this.state === 'idle' || this.state === 'title' ? (this.aim.has ? this.aim.point : null) : this.bait.pos;
     this.angler.update(dt, {
       pos: this.pos, bodyYaw: this.bodyYaw, rodYaw: this.rodYaw, rodPitch: this.rodPitch,
-      bendDir: this.bendDir, bendAmt: this.bendAmt, walking: this.walking, time: this.time,
+      bendDir: this.bendDir, bendAmt: this.bendAmt, walking: this.walking, walkRate: this.careful ? 0.55 : 1, time: this.time,
       lookAt: look, netOut: this.netOut,
     });
     this.tip.copy(this.angler.tip);
