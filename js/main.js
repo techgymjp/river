@@ -146,7 +146,7 @@ function updateCamera(dt, titleMode) {
   if (!cam.init) { cam.focus.copy(_f); }
   cam.focus.lerp(_f, Math.min(1, dt * 2.5));
   let yaw = cam.yaw, pitch = cam.pitch, dist = cam.dist;
-  if (titleMode) { yaw = -0.32 + Math.sin(performance.now() * 0.00008) * 0.22; pitch = 0.22; dist = 12; }
+  if (titleMode) { yaw = -0.32 + Math.sin(performance.now() * 0.00008) * 0.22; pitch = 0.34; dist = 11; }
   const desired = new THREE.Vector3(
     cam.focus.x + Math.sin(yaw) * Math.cos(pitch) * dist,
     cam.focus.y + Math.sin(pitch) * dist,
@@ -417,26 +417,34 @@ function endSession() {
       + Object.keys(counts).map((k) => `<tr><td>${fishName(k)}</td><td>${counts[k]}</td><td>${best[k].toFixed(1)} cm</td></tr>`).join('') + '</tbody></table>'
     : `<p>${t('over.none')}</p>`;
   $('overRedo').textContent = g.redoUsed ? t('over.redo', { n: g.redoUsed }) : '';
-  $('btnShare').hidden = !(plugin('Share') || navigator.share) || !g.catches.length;
   showScreen('over');
 }
 
+// シェア：アプリは Android の共有メニュー、ブラウザは共有メニュー（なければ X の投稿画面）
+const SHARE_URL = 'https://techgym.jp/column/claude-code-game-river/';
+async function share(text) {
+  const native = plugin('Share');
+  try {
+    if (native) await native.share({ title: t('title'), text, url: SHARE_URL, dialogTitle: t('share.dialog') });
+    else if (navigator.share) await navigator.share({ title: t('title'), text, url: SHARE_URL });
+    else window.open('https://x.com/intent/post?text=' + encodeURIComponent(text) + '&url=' + encodeURIComponent(SHARE_URL), '_blank', 'noopener');
+  } catch (e) { /* キャンセル */ }
+}
+function catchShareText(c) {
+  return t('share.catch', { fish: fishName(c.key), size: c.size.toFixed(1), extra: c.shaku ? t('share.shaku') : '' }) + t('share.tag');
+}
+$('btnResShare').addEventListener('click', () => { if (world.ui.currentCatch) share(catchShareText(world.ui.currentCatch)); });
+
 function shareText() {
   const g = world.game;
+  if (!g.catches.length) return t('share.text0') + t('share.tag');
   let top = null;
   for (const c of g.catches) if (!top || c.size > top.size) top = c;
   const bestTxt = top ? t('share.best', { fish: fishName(top.key), size: top.size.toFixed(1) }) : '';
   return t('share.text', { n: g.catches.length, s: g.score, best: bestTxt })
     + (g.redoUsed ? t('share.redo', { r: g.redoUsed }) : '') + t('share.tag');
 }
-$('btnShare').addEventListener('click', async () => {
-  const text = shareText();
-  const native = plugin('Share');
-  try {
-    if (native) await native.share({ title: t('title'), text, dialogTitle: t('share.dialog') });
-    else if (navigator.share) await navigator.share({ title: t('title'), text });
-  } catch (e) { /* キャンセル */ }
-});
+$('btnShare').addEventListener('click', () => share(shareText()));
 
 // ボタン
 $('btnPlay').addEventListener('click', () => { world.audio.init(); showScreen('setup'); });

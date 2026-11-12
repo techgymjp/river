@@ -112,6 +112,7 @@ export class UI {
   }
   /** onClose(choice): choice = 'release' | 'keep' | 'otori' */
   showResult(c, onClose, tomo = false) {
+    this.currentCatch = c;
     $('resName').textContent = fishName(c.key);
     $('resSize').textContent = c.size.toFixed(1) + ' cm';
     $('resWeight').textContent = t('res.weight', { g: c.weight });
