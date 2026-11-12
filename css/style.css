@@ -166,3 +166,13 @@ body.bannerSpace .screen, body.bannerSpace .modal { padding-bottom: 56px; }
   #decoyHud { top: 64px; }
   .zukan #zukanBody { grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); }
 }
+
+/* スマホの横画面：左下に「上流」とゲージ、右下に「合わせ」と「下流」。画面の上と中央は景色のために空ける */
+@media (pointer: coarse) and (orientation: landscape) {
+  #mobileControls { justify-content: flex-start; gap: 10px; bottom: 10px; }
+  #btnUp { order: 0; }
+  #btnStrike { order: 2; margin-left: auto; }
+  #btnDown { order: 3; }
+  #fightHud { top: auto; bottom: 10px; left: 107px; transform: none; width: min(calc(100vw - 320px), 380px); padding: 6px 10px; }
+  #fightHud .row { margin: 3px 0; }
+}
