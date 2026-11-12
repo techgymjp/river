@@ -20,7 +20,8 @@ Play Console の「ストアの掲載情報」に貼り付けて使います。�
 - **アプリ名**は検索で最も重く見られるので、ゲーム名の後ろに主要な検索語（ヤマメ・イワナ・アユ・3D・釣りゲーム）を入れた
 - **簡単な説明**には、アプリ名に入れきれなかった検索語（目印釣り・友釣り・川釣り・フィッシング・オフライン）を入れた
 - **詳しい説明**は、検索語（釣り・釣りゲーム・渓流釣り・川釣り・フィッシング・魚・ヤマメ・イワナ・ニジマス・アユ・ウグイ・友釣り・3D・リアル・癒し・自然・図鑑・オフライン）を、不自然にならない範囲で冒頭と見出しに入れた。同じ語の詰め込みは Google Play のポリシー違反になるので避けている
-- 英語は「trout fishing」「fishing game」「fly / stream / river fishing」など海外で検索される語を入れた（ayu・yamame は英語圏で知られていないため、trout・char と言い換えを併記）
+- 英語のアプリ名は、英語圏で知られていない「Keiryu」をやめ、よく検索される trout fishing・stream fishing を両方含む「Trout Stream Fishing 3D」にした
+- 英語の説明は「trout fishing」「fishing game」「stream / river fishing」など海外で検索される語を入れた（ayu・yamame は英語圏で知られていないため、trout・char と言い換えを併記）
 - 公開後は Play Console の「ストアの掲載情報のテスト」でアイコン・1 枚目のスクリーンショット・簡単な説明を比較できる
 
 ---
@@ -85,10 +86,10 @@ Play Console の「ストアの掲載情報」に貼り付けて使います。�
 
 ## English
 
-**App name** (max 30 characters: 29)
+**App name** (max 30 characters: 23)
 
 ```
-Keiryu: Trout Fishing Game 3D
+Trout Stream Fishing 3D
 ```
 
 **Short description** (max 80 characters: 80)
@@ -101,7 +102,7 @@ Fish a 3D Japanese mountain stream for trout, char & ayu. Relaxing offline play!
 
 ```
 Cast into a clear mountain stream in Japan and catch wild trout.
-Keiryu is a relaxing yet thrilling 3D river fishing game set in a beautifully rendered mountain valley.
+Trout Stream Fishing 3D is a relaxing yet thrilling river fishing game set in a beautifully rendered Japanese mountain valley.
 
 Babbling riffles, white foam behind the boulders, emerald pools and a waterfall upstream.
 Cast your line, watch the coloured markers, and strike the moment they twitch — the real feel of Japanese stream fishing, right on your phone.

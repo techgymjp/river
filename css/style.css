@@ -184,3 +184,8 @@ body.bannerSpace .screen, body.bannerSpace .modal { padding-bottom: 56px; }
   body.fighting #message { top: auto; bottom: 73px; left: var(--hud-left, 107px); transform: none; width: min(calc(100vw - var(--hud-left, 107px) - var(--hud-right, 213px)), 380px);
     max-width: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 6px 12px; }
 }
+
+/* 英語のゲーム名は長いので、ロゴの字間と大きさを詰める */
+html[lang="en"] .logo { letter-spacing: .02em; }
+html[lang="en"] .logo.big { font-size: clamp(30px, 5.6vw, 52px); letter-spacing: .03em; }
+@media (max-height: 500px) { html[lang="en"] .logo.big { font-size: 30px; } }

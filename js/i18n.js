@@ -1,6 +1,7 @@
 // 日本語 / English
 const DICT = {
   ja: {
+    'title.hud': '渓流釣り',
     'btn.pause': '一時停止', 'btn.play': 'プレイ', 'btn.howto': 'あそびかた', 'btn.back': '戻る', 'btn.toTitle': 'トップに戻る',
     'setup.title': '釣りの準備',
     'pause.title': '一時停止', 'pause.resume': '再開', 'pause.end': '釣りを終える',
@@ -107,8 +108,8 @@ const DICT = {
     'redo.watch': 'Watch an ad to re-hook', 'redo.next': 'Skip ({s})', 'redo.note': 'Hook the one that got away again ({n} / {max} left)',
     'redo.loading': 'Loading ad…', 'redo.fail': 'Could not load an ad',
     'msg.redo': 'Re-hooked! Don\'t let it go this time!',
-    'share.text': 'I caught {n} fish for {s} pt in Keiryu! {best}', 'share.best': 'Biggest: {fish} {size} cm.', 'share.redo': ' (re-hooked {r}x)', 'share.tag': ' #Keiryu', 'share.dialog': 'Share your catch',
-    'share.catch': 'I landed a {size} cm {fish} in Keiryu! {extra}', 'share.shaku': 'A shakumono (30 cm+)!', 'share.text0': 'Fishing for yamame, iwana and ayu in a 3D mountain stream — Keiryu!', 'btn.share': 'Share',
+    'share.text': 'I caught {n} fish for {s} pt in Trout Stream Fishing 3D! {best}', 'share.best': 'Biggest: {fish} {size} cm.', 'share.redo': ' (re-hooked {r}x)', 'share.tag': ' #TroutStreamFishing', 'share.dialog': 'Share your catch',
+    'share.catch': 'I landed a {size} cm {fish} in Trout Stream Fishing 3D! {extra}', 'share.shaku': 'A shakumono (30 cm+)!', 'share.text0': 'Fishing for yamame, iwana and ayu in a 3D mountain stream — Trout Stream Fishing 3D!', 'btn.share': 'Share',
     'hint.idle.touch': 'Tap the water to cast / ◀ ▶ to walk',
     'msg.driftEnd.touch': 'End of the drift — tap the water to cast again',
     'msg.outOfReach.touch': 'Out of reach (in the river, about 2–10 m)',
@@ -118,7 +119,7 @@ const DICT = {
     'hint.tomo.idle.touch': 'Tap a riffle to send the decoy / ◀ ▶ to walk',
     'hint.tomo.drift.touch': 'Tap to steer the decoy / Retrieve to reel in',
     'help.keys.touch': '<tr><td>Tap the water</td><td>Cast (steer the decoy in tomozuri)</td></tr><tr><td>Strike button</td><td>Strike (retrieve in tomozuri) / hold to pull</td></tr><tr><td>◀ Upstream / Downstream ▶</td><td>Walk</td></tr><tr><td>Two-finger drag / pinch</td><td>Rotate / zoom camera</td></tr>',
-    'title': 'Keiryu',
+    'title': 'Trout Stream Fishing 3D', 'title.hud': 'Trout Stream',
     'title.sub': 'Fish a clear mountain stream in Japan — yamame and iwana with drift bait, ayu with a live decoy.',
     'opt.method': 'Method', 'method.bait': 'Bait drift', 'method.tomo': 'Tomozuri (ayu)',
     'opt.time': 'Time of day', 'time.morning': 'Dawn', 'time.noon': 'Midday', 'time.evening': 'Dusk',
@@ -221,7 +222,7 @@ export function setLang(l) {
 }
 export function applyStatic(root = document) {
   document.documentElement.lang = lang;
-  document.title = lang === 'ja' ? '渓流釣り' : 'Keiryu — Mountain Stream Fishing';
+  document.title = lang === 'ja' ? '渓流釣り' : 'Trout Stream Fishing 3D';
   root.querySelectorAll('[data-i18n]').forEach((el) => { el.textContent = t(el.dataset.i18n); });
   root.querySelectorAll('[data-i18n-html]').forEach((el) => { el.innerHTML = t(el.dataset.i18nHtml); });
 }
