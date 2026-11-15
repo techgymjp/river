@@ -28,6 +28,8 @@ if (app) {
     if (kept.length === lines.length) throw new Error(`${marker} not found in ${file}`);
     fs.writeFileSync(f, kept.join('\n'));
   };
+  strip('index.html', 'id="storeLinks"');        // Google Play へのリンク（Web 版だけ）
+  strip('js/i18n.js', "'title.getAndroid'");     // その文言
   strip('js/main.js', '@web-only');
   strip('js/shared.js', '@web-only');
 }

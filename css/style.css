@@ -189,3 +189,9 @@ body.bannerSpace .screen, body.bannerSpace .modal { padding-bottom: 56px; }
 html[lang="en"] .logo { letter-spacing: .02em; }
 html[lang="en"] .logo.big { font-size: clamp(30px, 5.6vw, 52px); letter-spacing: .03em; }
 @media (max-height: 500px) { html[lang="en"] .logo.big { font-size: 30px; } }
+
+/* Web 版だけの Google Play へのリンク（アプリ用のビルドでは取り除く） */
+.storeLinks { margin: 12px 0 0; }
+.storeBtn { display: inline-block; text-decoration: none; font-size: 14px; padding: 7px 16px; border-radius: 999px; }
+.storeBtn::before { content: '▶ '; color: #01875f; }
+@media (max-height: 500px) { .storeLinks { margin-top: 6px; } .storeBtn { font-size: 12px; padding: 5px 12px; } }
