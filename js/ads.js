@@ -10,8 +10,8 @@ const UNITS = {
     },
     // 本番の広告ユニット（AdMob の Android アプリ「渓流釣り」）。ID が空の種類は本番ビルドで出さない
     production: {
-      interstitial: 'ca-app-pub-6411535997477460/6178057113',
-      rewarded: 'ca-app-pub-6411535997477460/8612648768',
+      interstitial: 'ca-app-pub-6411535997477460/3559892394',
+      rewarded: 'ca-app-pub-6411535997477460/5994484047',
       banner: 'ca-app-pub-6411535997477460/6575716789',
     },
   },
