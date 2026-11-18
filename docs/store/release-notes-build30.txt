@@ -1,0 +1,10 @@
+<ja-JP>
+・広告の表示を調整しました
+・より多くの端末でインストールできるようにしました
+・細かな不具合を修正し、動作を安定させました
+</ja-JP>
+<en-US>
+• Adjusted how ads are shown
+• The app can now be installed on more devices
+• Minor bug fixes and stability improvements
+</en-US>
