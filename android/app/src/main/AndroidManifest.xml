@@ -36,4 +36,9 @@
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
+
+    <!-- 横画面に固定しているが、横・縦どちらの画面も「必須ではない」と明示する
+         （screenOrientation から Google Play が横画面必須と判断し、対応端末を絞らないように） -->
+    <uses-feature android:name="android.hardware.screen.landscape" android:required="false" />
+    <uses-feature android:name="android.hardware.screen.portrait" android:required="false" />
 </manifest>
